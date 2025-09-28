@@ -12,6 +12,6 @@ class FluentParserTest {
         val tokens = CommonTokenStream(lexer)
         val parser = FluentParser(tokens)
         val file = parser.file()
-        println(file)
+        println(file.toStringTree(parser))
     }
 }

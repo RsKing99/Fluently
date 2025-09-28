@@ -7,19 +7,18 @@ androidCompileSDK = "36"
 androidMinimalSDK = "28"
 
 fluently = "1.0.0"
-iridium = "1.8.0" # https://github.com/karmakrafts/Iridium/tags
 kotlin = "2.2.20"
-kotlinx-coroutines = "1.10.2"
-kotlinx-io = "0.8.0"
-kotlinx-serialization = "1.9.0"
+kotlinx-coroutines = "1.10.2" # https://github.com/Kotlin/kotlinx.coroutines/releases
+kotlinx-io = "0.8.0" # https://github.com/Kotlin/kotlinx-io/releases
+kotlinx-serialization = "1.9.0" # https://github.com/Kotlin/kotlinx.serialization/releases
 dokka = "2.1.0-Beta" # https://github.com/Kotlin/dokka/releases
-karmaConventions = "1.7.0" # https://github.com/karmakrafts/karma-conventions/tags
+karmaConventions = "1.7.1" # https://github.com/karmakrafts/karma-conventions/tags
 autoService = "1.1.1" # https://github.com/google/auto/releases
 gradleNexus = "2.0.0" # https://github.com/gradle-nexus/publish-plugin/releases
 stately = "2.1.0" # https://github.com/touchlab/Stately/releases
 kotlinPoet = "2.2.0" # https://github.com/square/kotlinpoet/releases
 antlrKotlin = "1.0.5" # https://search.maven.org/artifact/com.strumenta/antlr-kotlin-runtime
-annotations = "26.0.2-1"
+annotations = "26.0.2-1" # https://github.com/JetBrains/java-annotations/releases
 
 [libraries]
 
@@ -33,7 +32,6 @@ kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serializa
 autoService = { module = "com.google.auto.service:auto-service", version.ref = "autoService" }
 stately-common = { module = "co.touchlab:stately-common", version.ref = "stately" }
 stately-concurrent-collections = { module = "co.touchlab:stately-concurrent-collections", version.ref = "stately" }
-iridium = { module = "dev.karmakrafts.iridium:iridium", version.ref = "iridium" }
 kotlinPoet = { module = "com.squareup:kotlinpoet", version.ref = "kotlinPoet" }
 antlrKotlin-runtime = { module = "com.strumenta:antlr-kotlin-runtime", version.ref = "antlrKotlin" }
 annotations = { module = "org.jetbrains:annotations", version.ref = "annotations" }

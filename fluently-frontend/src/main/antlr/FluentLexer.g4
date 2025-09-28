@@ -12,16 +12,16 @@ lexer grammar FluentLexer;
 
 // ---------- Custom functions for contextful tokenization
 @members {
-    fun isTabOrSpace(cp: Int): Boolean = cp == ' '.code || cp == '\t'.code
+    fun isTabOrSpace(code: Int): Boolean = code == ' '.code || code == '\t'.code
     fun isContinuation(): Boolean = !isTabOrSpace(_input.LA(2))
 
     fun nextAfterWhitespace(): Int {
         var laIndex = 2 // Start at char that follows after current match target
-        var currentChar = _input.LA(laIndex)
-        while(isTabOrSpace(currentChar)) {
-            currentChar = _input.LA(++laIndex)
+        var code = _input.LA(laIndex)
+        while(isTabOrSpace(code)) {
+            code = _input.LA(++laIndex)
         }
-        return currentChar
+        return code
     }
 
     fun selectorFollows(): Boolean {
@@ -30,6 +30,7 @@ lexer grammar FluentLexer;
     }
 
     fun placeableEndFollows(): Boolean = nextAfterWhitespace() == '}'.code
+    fun attributeFollows(): Boolean = nextAfterWhitespace() == '.'.code
 }
 
 // ---------- Default mode for handling root entries in the file
@@ -60,7 +61,7 @@ ERROR: .; // Everything else in default mode is considered an error
 mode M_VALUE;
 
 M_VALUE_END: // When the next char is neither ' ', '\t' or '.', we match NL to exit value mode
-    { isContinuation() || selectorFollows() || placeableEndFollows() }?
+    { isContinuation() || selectorFollows() || attributeFollows() || placeableEndFollows() }?
     NL -> popMode, type(NL)
     ;
 
