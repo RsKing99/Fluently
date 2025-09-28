@@ -14,29 +14,13 @@
  * limitations under the License.
  */
 
-rootProject.name = "fluently"
-enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
+package dev.karmakrafts.fluently.model
 
-pluginManagement {
-    repositories {
-        google()
-        mavenCentral()
-        mavenLocal()
-        gradlePluginPortal()
-        maven("https://central.sonatype.com/repository/maven-snapshots")
-    }
-}
+import dev.karmakrafts.fluently.model.expr.Expr
 
-@Suppress("UnstableApiUsage")
-dependencyResolutionManagement {
-    repositories {
-        google()
-        mavenCentral()
-        mavenLocal()
-        maven("https://central.sonatype.com/repository/maven-snapshots")
-        maven("https://jitpack.io")
-    }
-}
-
-include("fluently-frontend")
-include("fluently-runtime")
+data class EvaluationContext(
+    val file: LocalizationFile,
+    val functions: HashMap<String, Function> = HashMap(),
+    val variables: HashMap<String, Expr> = HashMap(),
+    val builder: StringBuilder = StringBuilder()
+)

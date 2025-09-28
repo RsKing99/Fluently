@@ -14,29 +14,13 @@
  * limitations under the License.
  */
 
-rootProject.name = "fluently"
-enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
+package dev.karmakrafts.fluently.model.entry
 
-pluginManagement {
-    repositories {
-        google()
-        mavenCentral()
-        mavenLocal()
-        gradlePluginPortal()
-        maven("https://central.sonatype.com/repository/maven-snapshots")
-    }
-}
+import dev.karmakrafts.fluently.model.Attribute
+import dev.karmakrafts.fluently.model.element.PatternElement
 
-@Suppress("UnstableApiUsage")
-dependencyResolutionManagement {
-    repositories {
-        google()
-        mavenCentral()
-        mavenLocal()
-        maven("https://central.sonatype.com/repository/maven-snapshots")
-        maven("https://jitpack.io")
-    }
-}
-
-include("fluently-frontend")
-include("fluently-runtime")
+data class Term(
+    override val name: String,
+    override val elements: List<PatternElement>,
+    override val attributes: Map<String, Attribute>
+) : LocalizationEntry

@@ -14,29 +14,20 @@
  * limitations under the License.
  */
 
-rootProject.name = "fluently"
-enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
+package dev.karmakrafts.fluently.model.expr
 
-pluginManagement {
-    repositories {
-        google()
-        mavenCentral()
-        mavenLocal()
-        gradlePluginPortal()
-        maven("https://central.sonatype.com/repository/maven-snapshots")
+import dev.karmakrafts.fluently.model.EvaluationContext
+
+data class NumberLiteral( // @formatter:off
+    val value: Number,
+    val isFloat: Boolean = false
+) : Expr { // @formatter:on
+    override fun getType(context: EvaluationContext): ExprType {
+        return ExprType.NUMBER
+    }
+
+    override fun evaluate(context: EvaluationContext): String {
+        return if (isFloat) value.toDouble().toString()
+        else value.toLong().toString()
     }
 }
-
-@Suppress("UnstableApiUsage")
-dependencyResolutionManagement {
-    repositories {
-        google()
-        mavenCentral()
-        mavenLocal()
-        maven("https://central.sonatype.com/repository/maven-snapshots")
-        maven("https://jitpack.io")
-    }
-}
-
-include("fluently-frontend")
-include("fluently-runtime")
