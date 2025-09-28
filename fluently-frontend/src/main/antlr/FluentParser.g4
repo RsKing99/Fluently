@@ -74,10 +74,10 @@ pattern:
     ;
 
 patternElement:
-    inlineText
-    | blockText
-    | inlinePlaceable
+    blockText
+    | inlineText
     | blockPlaceable
+    | inlinePlaceable
     ;
 
 selectExpression:
@@ -203,8 +203,8 @@ inlinePlaceable:
     ;
 
 inlineText:
-    (TEXT_CHAR
-    | BLANK_INLINE)+
+    (BLANK_INLINE
+    | TEXT_CHAR)+
     ;
 
 blockText:
