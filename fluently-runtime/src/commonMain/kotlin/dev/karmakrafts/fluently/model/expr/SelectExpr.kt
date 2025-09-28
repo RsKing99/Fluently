@@ -37,7 +37,12 @@ data class SelectExpr( // @formatter:off
     }
 
     override fun evaluate(context: EvaluationContext): String {
-        val variant = variants[variable] ?: defaultVariant
-        return variant.elements.joinToString { element -> element.evaluate(context) }
+        val value = variable.evaluate(context)
+        for ((key, variant) in variants) {
+            val keyValue = key.evaluate(context)
+            if (keyValue != value) continue
+            return variant.elements.joinToString("") { element -> element.evaluate(context) }
+        }
+        return defaultVariant.elements.joinToString("") { element -> element.evaluate(context) }
     }
 }

@@ -23,5 +23,5 @@ data class Function(
     val name: String,
     val returnType: ExprType,
     val parameters: List<Pair<String, ExprType>>,
-    val callback: (Map<String, Expr>) -> String
+    val callback: (EvaluationContext, Map<String, Expr>) -> Expr
 )

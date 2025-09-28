@@ -84,7 +84,7 @@ M_VALUE_END: // When the next char is neither ' ', '\t' or '.', we match NL to e
 L_BRACE: '{' -> pushMode(DEFAULT_MODE);
 BLANK_INLINE: WS+;
 M_VALUE_NL: NL -> type(NL);
-TEXT_CHAR: [\u0000-\uFFFF];
+TEXT_CHAR: .;
 
 // ---------- String mode interprects escape codes and characters that usually have a special meaning
 mode M_STRING;

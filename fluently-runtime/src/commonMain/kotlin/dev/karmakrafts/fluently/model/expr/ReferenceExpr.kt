@@ -27,7 +27,8 @@ data class ReferenceExpr( // @formatter:off
         MESSAGE,
         MESSAGE_ATTRIB,
         TERM,
-        TERM_ATTRIB
+        TERM_ATTRIB,
+        VARIABLE
     } // @formatter:on
 
     override fun getType(context: EvaluationContext): ExprType {
@@ -45,6 +46,8 @@ data class ReferenceExpr( // @formatter:off
             Type.TERM_ATTRIB -> attributeName?.let { attributeName ->
                 context.file.getTermAttribute(name, attributeName)
             } ?: "<missing:$name:$attributeName>"
+
+            Type.VARIABLE -> context.variables[name]?.evaluate(context) ?: "<missing:$name>"
         }
     }
 }

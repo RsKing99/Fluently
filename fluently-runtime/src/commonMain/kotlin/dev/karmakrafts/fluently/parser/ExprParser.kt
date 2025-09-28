@@ -37,6 +37,10 @@ object ExprParser : FluentParserBaseVisitor<List<Expr>>() {
         return aggregate + nextResult
     }
 
+    override fun visitVariableReference(ctx: FluentParser.VariableReferenceContext): List<Expr> {
+        return listOf(ReferenceExpr(ReferenceExpr.Type.VARIABLE, ctx.IDENT().text, null))
+    }
+
     override fun visitMessageReference(ctx: FluentParser.MessageReferenceContext): List<Expr> {
         val attribute = ctx.attributeAccessor()?.IDENT()?.text
         val type = if (attribute != null) ReferenceExpr.Type.MESSAGE_ATTRIB

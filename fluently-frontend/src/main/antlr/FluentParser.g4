@@ -37,8 +37,8 @@ file:
     ;
 
 entry:
-    (message NL)
-    | (term NL)
+    message
+    | term
     | COMMENT
     ;
 

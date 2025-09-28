@@ -25,6 +25,7 @@ import dev.karmakrafts.fluently.model.expr.Expr
 import dev.karmakrafts.fluently.parser.LocalizationEntryParser
 import org.antlr.v4.kotlinruntime.CharStreams
 import org.antlr.v4.kotlinruntime.CommonTokenStream
+import org.intellij.lang.annotations.Language
 
 data class LocalizationFile(
     val entries: List<LocalizationEntry> = emptyList(),
@@ -32,7 +33,7 @@ data class LocalizationFile(
     val globalVariables: Map<String, Expr> = emptyMap()
 ) {
     companion object {
-        fun parse(source: String): LocalizationFile {
+        fun parse(@Language("fluent") source: String): LocalizationFile {
             val charStream = CharStreams.fromString(source)
             val lexer = FluentLexer(charStream)
             val tokenStream = CommonTokenStream(lexer)
@@ -59,8 +60,7 @@ data class LocalizationFile(
     ): String { // @formatter:on
         return entries[name]?.elements?.let { elements ->
             val context = EvaluationContext(this).apply(contextInit)
-            for (element in elements) element.evaluate(context)
-            context.builder.toString()
+            elements.joinToString("") { element -> element.evaluate(context) }
         } ?: name
     }
 
@@ -73,8 +73,7 @@ data class LocalizationFile(
     ): String { // @formatter:on
         return entries[entryName]?.attributes[attribName]?.elements?.let { elements ->
             val context = EvaluationContext(this).apply(contextInit)
-            for (element in elements) element.evaluate(context)
-            context.builder.toString()
+            elements.joinToString("") { element -> element.evaluate(context) }
         } ?: "$entryName:$attribName"
     }
 

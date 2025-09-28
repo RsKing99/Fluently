@@ -39,15 +39,16 @@ data class CallExpr( // @formatter:off
                 val parameter = parameters.first { (paramName, _) -> paramName == name }
                 val (_, paramType) = parameter
                 check(valueType == paramType) { "Expected argument of type $paramType for '$name' but got $valueType" }
-                currentArgIndex = parameters.indexOf(parameter)
                 arguments[name] = value
+                currentArgIndex = parameters.indexOf(parameter)
                 continue
             }
-            val (paramName, paramType) = parameters.getOrNull(++currentArgIndex)
+            val (paramName, paramType) = parameters.getOrNull(currentArgIndex)
                 ?: error("Could not match parameter $currentArgIndex for function ${this.name}")
             check(valueType == paramType) { "Expected argument of type $paramType for '$name' but got $valueType" }
             arguments[paramName] = value
+            currentArgIndex++
         }
-        return context.functions[name]?.callback?.invoke(arguments) ?: "<missing:${name}()>"
+        return context.functions[name]?.callback?.invoke(context, arguments)?.evaluate(context) ?: "<missing:${name}()>"
     }
 }
