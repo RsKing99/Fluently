@@ -1,0 +1,8 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="fluently-frontend-wasm-js-1.0.0.0-SNAPSHOT">
+    <output-path>$PROJECT_DIR$/fluently-frontend/build/libs</output-path>
+    <root id="archive" name="fluently-frontend-wasm-js-1.0.0.0-SNAPSHOT.jar">
+      <element id="module-output" name="fluently.fluently-frontend.wasmJsMain" />
+    </root>
+  </artifact>
+</component>

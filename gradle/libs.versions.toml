@@ -1,0 +1,51 @@
+[versions]
+
+java = "17"
+
+androidGradle = "8.12.3" # https://developer.android.com/reference/tools/gradle-api
+androidCompileSDK = "36"
+androidMinimalSDK = "28"
+
+fluently = "1.0.0"
+iridium = "1.8.0" # https://github.com/karmakrafts/Iridium/tags
+kotlin = "2.2.20"
+kotlinx-coroutines = "1.10.2"
+kotlinx-io = "0.8.0"
+kotlinx-serialization = "1.9.0"
+dokka = "2.1.0-Beta" # https://github.com/Kotlin/dokka/releases
+karmaConventions = "1.7.0" # https://github.com/karmakrafts/karma-conventions/tags
+autoService = "1.1.1" # https://github.com/google/auto/releases
+gradleNexus = "2.0.0" # https://github.com/gradle-nexus/publish-plugin/releases
+stately = "2.1.0" # https://github.com/touchlab/Stately/releases
+kotlinPoet = "2.2.0" # https://github.com/square/kotlinpoet/releases
+antlrKotlin = "1.0.5" # https://search.maven.org/artifact/com.strumenta/antlr-kotlin-runtime
+annotations = "26.0.2-1"
+
+[libraries]
+
+kotlin-compiler-embeddable = { module = "org.jetbrains.kotlin:kotlin-compiler-embeddable", version.ref = "kotlin" }
+kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
+kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
+kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinx-coroutines" }
+kotlinx-io-core = { module = "org.jetbrains.kotlinx:kotlinx-io-core", version.ref = "kotlinx-io" }
+kotlinx-serialization-core = { module = "org.jetbrains.kotlinx:kotlinx-serialization-core", version.ref = "kotlinx-serialization" }
+kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
+autoService = { module = "com.google.auto.service:auto-service", version.ref = "autoService" }
+stately-common = { module = "co.touchlab:stately-common", version.ref = "stately" }
+stately-concurrent-collections = { module = "co.touchlab:stately-concurrent-collections", version.ref = "stately" }
+iridium = { module = "dev.karmakrafts.iridium:iridium", version.ref = "iridium" }
+kotlinPoet = { module = "com.squareup:kotlinpoet", version.ref = "kotlinPoet" }
+antlrKotlin-runtime = { module = "com.strumenta:antlr-kotlin-runtime", version.ref = "antlrKotlin" }
+annotations = { module = "org.jetbrains:annotations", version.ref = "annotations" }
+
+[plugins]
+
+android-library = { id = "com.android.library", version.ref = "androidGradle" }
+kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+kotlin-kapt = { id = "org.jetbrains.kotlin.kapt", version.ref = "kotlin" }
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }
+gradleNexus = { id = "io.github.gradle-nexus.publish-plugin", version.ref = "gradleNexus" }
+karmaConventions = { id = "dev.karmakrafts.conventions.karma-conventions", version.ref = "karmaConventions" }
+antlrKotlin = { id = "com.strumenta.antlr-kotlin", version.ref = "antlrKotlin" }
