@@ -18,6 +18,7 @@ package dev.karmakrafts.fluently.parser
 
 import dev.karmakrafts.fluently.frontend.FluentParser
 import dev.karmakrafts.fluently.frontend.FluentParserBaseVisitor
+import dev.karmakrafts.fluently.model.element.Block
 import dev.karmakrafts.fluently.model.element.PatternElement
 import dev.karmakrafts.fluently.model.element.Text
 
@@ -36,12 +37,7 @@ object PatternElementParser : FluentParserBaseVisitor<List<PatternElement>>() {
     }
 
     override fun visitBlockText(ctx: FluentParser.BlockTextContext): List<PatternElement> {
-        val value = ctx.text
-        if (value.startsWith('\n')) {
-            val flatValue = value.substring(1).trimStart(' ', '\t')
-            return listOf(Text("\n$flatValue"))
-        }
-        return listOf(Text(value.trimStart(' ', '\t')))
+        return listOf(Block(ctx.inlineText().accept(PatternElementParser).first()))
     }
 
     override fun visitInlinePlaceable(ctx: FluentParser.InlinePlaceableContext): List<PatternElement> {
@@ -50,5 +46,9 @@ object PatternElementParser : FluentParserBaseVisitor<List<PatternElement>>() {
             return listOf(selectExpression.accept(ExprParser).first())
         }
         return listOf(ctx.inlineExpression()!!.accept(ExprParser).first())
+    }
+
+    override fun visitBlockPlaceable(ctx: FluentParser.BlockPlaceableContext): List<PatternElement> {
+        return listOf(Block(ctx.inlinePlaceable().accept(ExprParser).first()))
     }
 }

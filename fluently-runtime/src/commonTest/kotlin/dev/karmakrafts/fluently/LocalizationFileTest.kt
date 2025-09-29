@@ -49,15 +49,15 @@ class LocalizationFileTest {
             message-number-two = {-my-term} TESTING
             message-number-three = It's a { $test ->
                 [fox] 🦊
-                fops
+                {" "}fops
                 [wolp] 🐺
-                wolp
+                {" "}wolp
                 *[turtle] 🐢
-                turt
+                {" "}turt
             }! {DEXCL(name: "Pure Kotlin Fluent implementation")}
         """.trimIndent())
         assertEquals(4, file.entries.size)
-        assertEquals("""It's a 🐺${'\n'}wolp! Pure Kotlin Fluent implementation!!""", file.getMessage("message-number-three") {
+        assertEquals("""It's a 🐺${'\n'} wolp! Pure Kotlin Fluent implementation!!""", file.getMessage("message-number-three") {
             variables["test"] = StringLiteral("wolp")
             functions["DEXCL"] = Function("DEXCL", ExprType.STRING,
                 listOf("name" to ExprType.STRING)) { ctx, args ->
