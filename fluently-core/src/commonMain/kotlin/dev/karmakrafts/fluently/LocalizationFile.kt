@@ -25,11 +25,21 @@ import org.antlr.v4.kotlinruntime.CharStreams
 import org.antlr.v4.kotlinruntime.CommonTokenStream
 import org.intellij.lang.annotations.Language
 
-data class LocalizationFile( // @formatter:off
+@ConsistentCopyVisibility
+data class LocalizationFile private constructor( // @formatter:off
     val messages: MutableMap<String, Message> = HashMap(),
     val globalContextInit: EvaluationContextBuilder.() -> Unit
 ) { // @formatter:on
     companion object {
+        fun fromMessages( // @formatter:off
+            messages: Map<String, Message>,
+            globalContextInit: EvaluationContextBuilder.() -> Unit = {}
+        ): LocalizationFile { // @formatter:on
+            val file = LocalizationFile(globalContextInit = globalContextInit)
+            file.messages += messages
+            return file
+        }
+
         fun parse( // @formatter:off
             @Language("fluent") source: String,
             globalContextInit: EvaluationContextBuilder.() -> Unit = {}
