@@ -87,9 +87,9 @@ object ExprParser : FluentParserBaseVisitor<List<Expr>>() {
         val builder = StringBuilder()
         for (child in ctx.children!!) {
             when(child) { // @formatter:off
-                is TerminalNode if child.symbol.type == FluentLexer.Tokens.QUOTE -> continue
-                is TerminalNode if child.symbol.type == FluentLexer.Tokens.ESCAPED_CHAR -> {
-                    builder.append(when(val text = child.text) {
+                is TerminalNode -> when(child.symbol.type) {
+                    FluentLexer.Tokens.QUOTE -> continue
+                    FluentLexer.Tokens.ESCAPED_CHAR -> builder.append(when(val text = child.text) {
                         "\\n" -> "\n"
                         "\\r" -> "\r"
                         "\\t" -> "\t"
@@ -97,13 +97,8 @@ object ExprParser : FluentParserBaseVisitor<List<Expr>>() {
                         "\\\\" -> "\\"
                         else -> text
                     })
-                }
-                is TerminalNode if child.symbol.type == FluentLexer.Tokens.UNICODE_CHAR -> {
-                    val value = child.text.substring(2).toInt(16)
-                    builder.append(value.toChar())
-                }
-                is TerminalNode if child.symbol.type == FluentLexer.Tokens.STRING_TEXT -> {
-                    builder.append(child.text)
+                    FluentLexer.Tokens.UNICODE_CHAR -> builder.append(child.text.substring(2).toInt(16).toChar())
+                    FluentLexer.Tokens.STRING_TEXT -> builder.append(child.text)
                 }
             } // @formatter:on
         }
