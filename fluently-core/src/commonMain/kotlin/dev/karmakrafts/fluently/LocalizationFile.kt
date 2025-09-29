@@ -21,6 +21,8 @@ import dev.karmakrafts.fluently.frontend.FluentLexer
 import dev.karmakrafts.fluently.frontend.FluentParser
 import dev.karmakrafts.fluently.parser.ParserContext
 import dev.karmakrafts.fluently.parser.TermParser
+import kotlinx.io.Source
+import kotlinx.io.readString
 import org.antlr.v4.kotlinruntime.CharStreams
 import org.antlr.v4.kotlinruntime.CommonTokenStream
 import org.intellij.lang.annotations.Language
@@ -57,6 +59,13 @@ data class LocalizationFile private constructor( // @formatter:off
                 .associateBy { message -> message.name }
             // @formatter:on
             return file
+        }
+
+        fun parse( // @formatter:off
+            source: Source,
+            globalContextInit: EvaluationContextBuilder.() -> Unit = {}
+        ): LocalizationFile { // @formatter:on
+            return parse(source.readString(), globalContextInit)
         }
     }
 
