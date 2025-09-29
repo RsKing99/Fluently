@@ -35,7 +35,7 @@ class PatternElementParser(
     }
 
     override fun visitInlineText(ctx: FluentParser.InlineTextContext): List<PatternElement> {
-        return listOf(Text(ctx.text.trimStart(' ', '\t')))
+        return listOf(Text(ctx.text))
     }
 
     override fun visitBlockText(ctx: FluentParser.BlockTextContext): List<PatternElement> {

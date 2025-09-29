@@ -14,22 +14,8 @@
  * limitations under the License.
  */
 
-package dev.karmakrafts.fluently.expr
+package dev.karmakrafts.fluently
 
-import dev.karmakrafts.fluently.EvaluationContext
-
-data class NumberLiteral( // @formatter:off
-    val value: Number
-) : Expr { // @formatter:on
-    inline val isDouble: Boolean
-        get() = value is Double
-
-    override fun getType(context: EvaluationContext): ExprType {
-        return ExprType.NUMBER
-    }
-
-    override fun evaluate(context: EvaluationContext): String {
-        return if (isDouble) value.toDouble().toString()
-        else value.toLong().toString()
-    }
+interface Named {
+    val name: String
 }

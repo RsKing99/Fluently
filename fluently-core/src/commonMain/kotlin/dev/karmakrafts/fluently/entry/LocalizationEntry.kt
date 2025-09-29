@@ -14,29 +14,20 @@
  * limitations under the License.
  */
 
-rootProject.name = "fluently"
-enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
+package dev.karmakrafts.fluently.entry
 
-pluginManagement {
-    repositories {
-        google()
-        mavenCentral()
-        mavenLocal()
-        gradlePluginPortal()
-        maven("https://central.sonatype.com/repository/maven-snapshots")
+import dev.karmakrafts.fluently.Attribute
+import dev.karmakrafts.fluently.Evaluable
+import dev.karmakrafts.fluently.EvaluationContext
+import dev.karmakrafts.fluently.Named
+import dev.karmakrafts.fluently.element.PatternElement
+
+sealed interface LocalizationEntry : Evaluable, Named {
+    override val name: String
+    val elements: List<PatternElement>
+    val attributes: Map<String, Attribute>
+
+    override fun evaluate(context: EvaluationContext): String {
+        return elements.joinToString("") { element -> element.evaluate(context) }
     }
 }
-
-@Suppress("UnstableApiUsage")
-dependencyResolutionManagement {
-    repositories {
-        google()
-        mavenCentral()
-        mavenLocal()
-        maven("https://central.sonatype.com/repository/maven-snapshots")
-        maven("https://jitpack.io")
-    }
-}
-
-include("fluently-frontend")
-include("fluently-core")

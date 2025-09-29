@@ -17,20 +17,25 @@
 package dev.karmakrafts.fluently.expr
 
 import dev.karmakrafts.fluently.EvaluationContext
+import dev.karmakrafts.fluently.element.PatternElement
 
-data class TermReference( // @formatter:off
-    val entryName: String,
-    val attribName: String?,
-    val arguments: Map<String, Expr>
-) : Expr { // @formatter:on
-    inline val isParametrized: Boolean
-        get() = arguments.isNotEmpty()
+data class SelectExpr(val variable: Expr, val variants: Map<Expr, Variant>) : Expr {
+    data class Variant(val key: Expr, val elements: List<PatternElement>, val isDefault: Boolean = false)
+
+    inline val defaultVariant: Variant
+        get() = variants.values.first { variant -> variant.isDefault }
 
     override fun getType(context: EvaluationContext): ExprType {
-        error("Term reference hasn't been lowered")
+        return ExprType.STRING
     }
 
     override fun evaluate(context: EvaluationContext): String {
-        error("Term reference hasn't been lowered")
+        val value = variable.evaluate(context)
+        for ((key, variant) in variants) {
+            val keyValue = key.evaluate(context)
+            if (keyValue != value) continue
+            return variant.elements.joinToString("") { element -> element.evaluate(context) }
+        }
+        return defaultVariant.elements.joinToString("") { element -> element.evaluate(context) }
     }
 }

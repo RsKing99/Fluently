@@ -17,45 +17,49 @@
 package dev.karmakrafts.fluently.parser
 
 import dev.karmakrafts.fluently.Attribute
-import dev.karmakrafts.fluently.entry.Message
+import dev.karmakrafts.fluently.LocalizationFile
+import dev.karmakrafts.fluently.entry.Term
 import dev.karmakrafts.fluently.frontend.FluentParser
 import dev.karmakrafts.fluently.frontend.FluentParserBaseVisitor
 
-class MessageParser(
-    val context: ParserContext
-) : FluentParserBaseVisitor<List<Message>>() {
-    override fun defaultResult(): List<Message> = ArrayList()
+class TermParser(
+    file: LocalizationFile
+) : FluentParserBaseVisitor<Map<String, Term>>() {
+    private val parserContext: ParserContext = ParserContext(file, emptyMap(), false)
+    private val patternElementParser: PatternElementParser = PatternElementParser(parserContext)
+
+    override fun defaultResult(): Map<String, Term> = HashMap()
 
     override fun aggregateResult( // @formatter:off
-        aggregate: List<Message>,
-        nextResult: List<Message>
-    ): List<Message> { // @formatter:on
+        aggregate: Map<String, Term>,
+        nextResult: Map<String, Term>
+    ): Map<String, Term> { // @formatter:on
         return aggregate + nextResult
     }
 
-    private fun parseAttribute(ctx: FluentParser.AttributeContext): Attribute {
+    private fun parseAttribute(entryName: String, ctx: FluentParser.AttributeContext): Attribute {
         val name = ctx.IDENT().text
         val attribElements = ctx.pattern()
             .patternElement()
             .asSequence()
-            .map { element -> element.accept(context.patternElementParser).first() }
+            .map { element -> element.accept(patternElementParser).first() }
             .toList()
-        return Attribute(name, attribElements)
+        return Attribute(entryName, name, attribElements)
     }
 
-    override fun visitMessage(ctx: FluentParser.MessageContext): List<Message> {
+    override fun visitTerm(ctx: FluentParser.TermContext): Map<String, Term> {
         val name = ctx.IDENT().text
         val elements = ctx.pattern()
-            ?.patternElement()
-            ?.asSequence()
-            ?.map { element -> element.accept(context.patternElementParser).first() }
-            ?.toList() ?: emptyList()
+            .patternElement()
+            .asSequence()
+            .map { element -> element.accept(patternElementParser).first() }
+            .toList()
         // @formatter:off
         val attributes = ctx.attribute()
             .asSequence()
-            .map(::parseAttribute)
+            .map { attribute -> parseAttribute(name, attribute) }
             .associateBy { attribute -> attribute.name }
         // @formatter:on
-        return listOf(Message(name, elements, attributes))
+        return mapOf(name to Term(name, elements, attributes))
     }
 }

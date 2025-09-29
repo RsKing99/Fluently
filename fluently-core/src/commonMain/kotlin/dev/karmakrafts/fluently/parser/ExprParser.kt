@@ -92,7 +92,7 @@ class ExprParser(
                     visited += term
                 }
                 // Attempt to resolve variables which match the given arguments of the current parametrized term
-                is Reference if element.referenceType == Reference.Type.VARIABLE && arguments.isNotEmpty() -> {
+                is Reference if element.referenceType == Reference.Type.VARIABLE -> {
                     val varName = element.name
                     val value = if (varName in arguments) arguments[varName]!! else element
                     elements.add(0, value)
@@ -103,9 +103,10 @@ class ExprParser(
         }
     }
 
-    private fun expandElements(
-        elements: List<PatternElement>, arguments: Map<String, Expr>
-    ): List<PatternElement> {
+    private fun expandElements( // @formatter:off
+        elements: List<PatternElement>,
+        arguments: Map<String, Expr>
+    ): List<PatternElement> { // @formatter:on
         val expandedElements = ArrayList<PatternElement>()
         val queue = ArrayDeque<PatternElement>()
         queue += elements

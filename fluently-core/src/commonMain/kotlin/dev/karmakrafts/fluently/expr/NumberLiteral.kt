@@ -14,19 +14,20 @@
  * limitations under the License.
  */
 
-package dev.karmakrafts.fluently.entry
+package dev.karmakrafts.fluently.expr
 
-import dev.karmakrafts.fluently.Attribute
-import dev.karmakrafts.fluently.Evaluable
 import dev.karmakrafts.fluently.EvaluationContext
-import dev.karmakrafts.fluently.element.PatternElement
 
-sealed interface LocalizationEntry : Evaluable {
-    val name: String
-    val elements: List<PatternElement>
-    val attributes: Map<String, Attribute>
+data class NumberLiteral(val value: Number) : Expr {
+    inline val isDouble: Boolean
+        get() = value is Double
+
+    override fun getType(context: EvaluationContext): ExprType {
+        return ExprType.NUMBER
+    }
 
     override fun evaluate(context: EvaluationContext): String {
-        return elements.joinToString("") { element -> element.evaluate(context) }
+        return if (isDouble) value.toDouble().toString()
+        else value.toLong().toString()
     }
 }

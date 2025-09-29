@@ -14,18 +14,19 @@
  * limitations under the License.
  */
 
-package dev.karmakrafts.fluently
+package dev.karmakrafts.fluently.expr
 
-import dev.karmakrafts.fluently.element.PatternElement
+import dev.karmakrafts.fluently.EvaluationContext
 
-data class Attribute( // @formatter:off
-    val name: String,
-    val elements: List<PatternElement>
-) : Evaluable { // @formatter:on
+data class TermReference(val entryName: String, val attribName: String?, val arguments: Map<String, Expr>) : Expr {
+    inline val isParametrized: Boolean
+        get() = arguments.isNotEmpty()
+
+    override fun getType(context: EvaluationContext): ExprType {
+        error("Term reference hasn't been lowered")
+    }
+
     override fun evaluate(context: EvaluationContext): String {
-        context.pushParent(this)
-        val result = elements.joinToString("") { element -> element.evaluate(context) }
-        context.popParent()
-        return result
+        error("Term reference hasn't been lowered")
     }
 }

@@ -17,7 +17,6 @@
 package dev.karmakrafts.fluently
 
 import dev.karmakrafts.fluently.entry.Message
-import dev.karmakrafts.fluently.expr.Expr
 import dev.karmakrafts.fluently.frontend.FluentLexer
 import dev.karmakrafts.fluently.frontend.FluentParser
 import dev.karmakrafts.fluently.parser.ParserContext
@@ -26,19 +25,21 @@ import org.antlr.v4.kotlinruntime.CharStreams
 import org.antlr.v4.kotlinruntime.CommonTokenStream
 import org.intellij.lang.annotations.Language
 
-data class LocalizationFile(
+data class LocalizationFile( // @formatter:off
     val messages: MutableMap<String, Message> = HashMap(),
-    val globalFunctions: MutableMap<String, Function> = HashMap(),
-    val globalVariables: MutableMap<String, Expr> = HashMap()
-) {
+    val globalContextInit: EvaluationContextBuilder.() -> Unit
+) { // @formatter:on
     companion object {
-        fun parse(@Language("fluent") source: String): LocalizationFile {
+        fun parse( // @formatter:off
+            @Language("fluent") source: String,
+            globalContextInit: EvaluationContextBuilder.() -> Unit = {}
+        ): LocalizationFile { // @formatter:on
             val charStream = CharStreams.fromString(source)
             val lexer = FluentLexer(charStream)
             val tokenStream = CommonTokenStream(lexer)
             val parser = FluentParser(tokenStream)
             val fileNode = parser.file()
-            val file = LocalizationFile()
+            val file = LocalizationFile(globalContextInit = globalContextInit)
             val terms = fileNode.accept(TermParser(file))
             val context = ParserContext(file, terms, true)
             // @formatter:off
@@ -65,8 +66,7 @@ data class LocalizationFile(
         crossinline contextInit: EvaluationContextBuilder.() -> Unit = {}
     ): String { // @formatter:on
         return this[name]?.evaluate(this) {
-            functions += globalFunctions
-            variables += globalVariables
+            globalContextInit()
             contextInit()
         } ?: "<missing:$name>"
     }
@@ -85,8 +85,7 @@ data class LocalizationFile(
         crossinline contextInit: EvaluationContextBuilder.() -> Unit = {}
     ): String { // @formatter:on
         return this[entryName, attribName]?.evaluate(this) {
-            functions += globalFunctions
-            variables += globalVariables
+            globalContextInit()
             contextInit()
         } ?: "<missing:$entryName.$attribName>"
     }

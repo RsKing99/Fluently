@@ -18,16 +18,8 @@ package dev.karmakrafts.fluently.expr
 
 import dev.karmakrafts.fluently.EvaluationContext
 
-data class Reference( // @formatter:off
-    val referenceType: Type,
-    val name: String,
-    val attributeName: String?
-) : Expr { // @formatter:on
-    enum class Type { // @formatter:off
-        MESSAGE,
-        ATTRIBUTE,
-        VARIABLE
-    } // @formatter:on
+data class Reference(val referenceType: Type, val name: String, val attributeName: String?) : Expr {
+    enum class Type { MESSAGE, ATTRIBUTE, VARIABLE }
 
     override fun getType(context: EvaluationContext): ExprType {
         return ExprType.STRING
@@ -37,19 +29,19 @@ data class Reference( // @formatter:off
         return when (referenceType) {
             Type.MESSAGE -> {
                 val message = context.file[name] ?: error("No message named '$name'")
-                context.pushParent(message)
-                val result = message.evaluate(context)
-                context.popParent()
-                result
+                check(!context.hasVisitedParent(message)) {
+                    "Message '$name' cannot reference itself (${context.getParentCycle()})"
+                }
+                message.evaluate(context)
             }
 
             Type.ATTRIBUTE -> {
                 val attribute =
                     context.file[name, attributeName!!] ?: error("No attribute named '$name.$attributeName'")
-                context.pushParent(attribute)
-                val result = attribute.evaluate(context)
-                context.popParent()
-                result
+                check(!context.hasVisitedParent(attribute)) {
+                    "Attribute '$name.$attributeName' cannot reference itself (${context.getParentCycle()})"
+                }
+                attribute.evaluate(context)
             }
 
             Type.VARIABLE -> context.variables[name]?.evaluate(context) ?: "<missing:$name>"

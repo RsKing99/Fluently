@@ -20,19 +20,21 @@ import dev.karmakrafts.fluently.expr.Expr
 
 data class EvaluationContext(
     val file: LocalizationFile,
-    val functions: Map<String, Function> = HashMap(),
-    val variables: Map<String, Expr> = HashMap(),
-    val parentStack: ArrayDeque<Evaluable> = ArrayDeque() // Used for multi-level cycle detection
+    val functions: Map<String, Function>,
+    val variables: Map<String, Expr>,
+    val parentStack: ArrayDeque<Named> = ArrayDeque() // Used for multi-level cycle detection
 ) {
-    fun withVariableOverrides(variables: Map<String, Expr>): EvaluationContext {
-        val variables = HashMap(this.variables)
-        variables += variables
-        return copy(variables = variables)
-    }
+    fun getParentCycle(): String = (parentStack.toList() + parentStack.first()) //
+        .joinToString(" -> ") { element ->
+            when (element) {
+                is Attribute -> "${element.entryName}.${element.name}"
+                else -> element.name
+            }
+        }
 
-    fun hasVisited(element: Evaluable): Boolean = element in parentStack
+    fun hasVisitedParent(element: Named): Boolean = element in parentStack
 
-    fun pushParent(element: Evaluable) {
+    fun pushParent(element: Named) {
         parentStack.addFirst(element)
     }
 

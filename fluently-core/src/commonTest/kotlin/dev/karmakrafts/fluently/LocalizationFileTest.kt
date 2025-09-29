@@ -43,11 +43,12 @@ class LocalizationFileTest {
 
     @Test
     fun `Parse complex file`() {
-        val file = LocalizationFile.parse(
-            $$"""
+        val file = LocalizationFile.parse($$"""
             # Some line comments
             -my-term-1 = TESTING
             -my-term-2 = {-my-term-1}::
+            -my-term-3 = {$test}
+            animal-type = {-my-term-3(test: "fops")}
             ## With different significance
             message-number-one = {-my-term-2} Karma Krafts
             message-number-two = {-my-term-2} TESTING
@@ -59,13 +60,21 @@ class LocalizationFileTest {
                 *[turtle] 🐢
                 {"\n\u0020"}turt
             }! {DEXCL(name: "Pure Kotlin Fluent implementation", 42)}
-             .foo = Testing
-        """.trimIndent()
-        )
+                .foo = Testing
+                .bar = Testing
+                .baz = Testing
+        """.trimIndent())
 
-        assertEquals(3, file.messages.size)
+        assertEquals(4, file.messages.size)
+
+        assertEquals("""Testing""", file.formatAttribute("message-number-three", "foo"))
+        assertEquals("""fops""", file.format("animal-type") {
+            variable("test", "wolf")
+        })
+
         assertEquals("""TESTING:: Karma Krafts""", file.format("message-number-one"))
         assertEquals("""TESTING:: TESTING""", file.format("message-number-two"))
+
         assertEquals(
             """It's a 🐺${"\n\n"} wolp! Pure Kotlin Fluent implementation (42)!!""",
             file.format("message-number-three") {

@@ -18,10 +18,7 @@ package dev.karmakrafts.fluently.expr
 
 import dev.karmakrafts.fluently.EvaluationContext
 
-data class FunctionReference( // @formatter:off
-    val name: String,
-    val arguments: List<Pair<String?, Expr>>
-) : Expr { // @formatter:on
+data class FunctionReference(val name: String, val arguments: List<Pair<String?, Expr>>) : Expr {
     override fun getType(context: EvaluationContext): ExprType {
         val function = context.functions[name] ?: error("No function named '$name'")
         return function.returnType
