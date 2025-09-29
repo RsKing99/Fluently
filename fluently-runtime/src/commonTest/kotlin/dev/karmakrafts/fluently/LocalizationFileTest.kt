@@ -31,43 +31,54 @@ class LocalizationFileTest {
 
     @Test
     fun `Parse simple file`() {
-        val file = LocalizationFile.parse("""
+        val file = LocalizationFile.parse(
+            """
             -my-term = TESTING
             message-number-one = HELLO
             message-number-two = HELLOU
-        """.trimIndent())
+        """.trimIndent()
+        )
         assertEquals(2, file.messages.size)
     }
 
     @Test
     fun `Parse complex file`() {
-        val file = LocalizationFile.parse($$"""
+        val file = LocalizationFile.parse(
+            $$"""
             # Some line comments
-            -my-term = TESTING
+            -my-term-1 = TESTING
+            -my-term-2 = {-my-term-1}::
             ## With different significance
-            message-number-one = {-my-term} Karma Krafts
-            message-number-two = {-my-term} TESTING
+            message-number-one = {-my-term-2} Karma Krafts
+            message-number-two = {-my-term-2} TESTING
             message-number-three = It's a { $test ->
                 [fox] 🦊
-                {"\u0020"}fops
-                [wolp] 🐺
-                {"\u0020"}wolp
+                {"\n\u0020"}fops
+                [wolf] 🐺
+                {"\n\u0020"}wolp
                 *[turtle] 🐢
-                {"\u0020"}turt
-            }! {DEXCL(name: "Pure Kotlin Fluent implementation", 1)}
-             .foo = Testing {message-number-three.foo}
-        """.trimIndent())
+                {"\n\u0020"}turt
+            }! {DEXCL(name: "Pure Kotlin Fluent implementation", 42)}
+             .foo = Testing
+        """.trimIndent()
+        )
+
         assertEquals(3, file.messages.size)
-        assertEquals("""It's a 🐺${'\n'} wolp! Pure Kotlin Fluent implementation!!""", file.getMessage("message-number-three") {
-            variable("test", "wolp")
-            function("DEXCL") {
-                parameter("name", ExprType.STRING)
-                parameter("index", ExprType.NUMBER)
-                action { ctx, args ->
-                    val name = args.values.first().evaluate(ctx)
-                    StringLiteral("$name!!")
+        assertEquals("""TESTING:: Karma Krafts""", file.format("message-number-one"))
+        assertEquals("""TESTING:: TESTING""", file.format("message-number-two"))
+        assertEquals(
+            """It's a 🐺${"\n\n"} wolp! Pure Kotlin Fluent implementation (42)!!""",
+            file.format("message-number-three") {
+                variable("test", "wolf")
+                function("DEXCL") {
+                    parameter("name", ExprType.STRING)
+                    parameter("index", ExprType.NUMBER)
+                    action { ctx, args ->
+                        val name = args["name"]!!.evaluate(ctx)
+                        val index = args["index"]!!.evaluate(ctx)
+                        StringLiteral("$name ($index)!!")
+                    }
                 }
-            }
-        })
+            })
     }
 }

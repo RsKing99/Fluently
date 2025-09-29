@@ -17,25 +17,26 @@
 package dev.karmakrafts.fluently
 
 import dev.karmakrafts.fluently.expr.Expr
-import dev.karmakrafts.fluently.expr.NumberLiteral
-import dev.karmakrafts.fluently.expr.StringLiteral
 
 data class EvaluationContext(
     val file: LocalizationFile,
-    val functions: HashMap<String, Function> = HashMap(),
-    val variables: HashMap<String, Expr> = HashMap(),
-    val builder: StringBuilder = StringBuilder()
+    val functions: Map<String, Function> = HashMap(),
+    val variables: Map<String, Expr> = HashMap(),
+    val parentStack: ArrayDeque<Evaluable> = ArrayDeque() // Used for multi-level cycle detection
 ) {
-    fun variable(name: String, value: String) {
-        variables[name] = StringLiteral(value)
+    fun withVariableOverrides(variables: Map<String, Expr>): EvaluationContext {
+        val variables = HashMap(this.variables)
+        variables += variables
+        return copy(variables = variables)
     }
 
-    fun variable(name: String, value: Number) {
-        variables[name] = NumberLiteral(value)
+    fun hasVisited(element: Evaluable): Boolean = element in parentStack
+
+    fun pushParent(element: Evaluable) {
+        parentStack.addFirst(element)
     }
 
-    inline fun function(name: String, block: FunctionBuilder.() -> Unit) {
-        val function = FunctionBuilder(name).apply(block).build()
-        functions[name] = function
+    fun popParent() {
+        parentStack.removeFirst()
     }
 }

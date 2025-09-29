@@ -23,6 +23,9 @@ data class Attribute( // @formatter:off
     val elements: List<PatternElement>
 ) : Evaluable { // @formatter:on
     override fun evaluate(context: EvaluationContext): String {
-        return elements.joinToString("") { element -> element.evaluate(context) }
+        context.pushParent(this)
+        val result = elements.joinToString("") { element -> element.evaluate(context) }
+        context.popParent()
+        return result
     }
 }

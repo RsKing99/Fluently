@@ -16,13 +16,18 @@
 
 package dev.karmakrafts.fluently.parser
 
-import dev.karmakrafts.fluently.expr.CallExpr
+import dev.karmakrafts.fluently.Attribute
+import dev.karmakrafts.fluently.Evaluable
+import dev.karmakrafts.fluently.element.PatternElement
+import dev.karmakrafts.fluently.entry.Term
 import dev.karmakrafts.fluently.expr.CompoundExpr
 import dev.karmakrafts.fluently.expr.Expr
+import dev.karmakrafts.fluently.expr.FunctionReference
 import dev.karmakrafts.fluently.expr.NumberLiteral
-import dev.karmakrafts.fluently.expr.ReferenceExpr
+import dev.karmakrafts.fluently.expr.Reference
 import dev.karmakrafts.fluently.expr.SelectExpr
 import dev.karmakrafts.fluently.expr.StringLiteral
+import dev.karmakrafts.fluently.expr.TermReference
 import dev.karmakrafts.fluently.frontend.FluentLexer
 import dev.karmakrafts.fluently.frontend.FluentParser
 import dev.karmakrafts.fluently.frontend.FluentParserBaseVisitor
@@ -41,56 +46,109 @@ class ExprParser(
     }
 
     override fun visitVariableReference(ctx: FluentParser.VariableReferenceContext): List<Expr> {
-        return listOf(ReferenceExpr(ReferenceExpr.Type.VARIABLE, ctx.IDENT().text, null))
-    }
-
-    private fun checkAttributeAccessor(ctx: FluentParser.AttributeAccessorContext) {
-        // Check for cyclic reference
-        val name = ctx.IDENT().text
-        val parent = context.parent
-        val lastParent = context.lastParent ?: return
-        val type = if (lastParent is ParserContext.ParentMessage) "message"
-        else "term"
-        // @formatter:off
-        check(!(parent is ParserContext.ParentAttribute
-            && parent.entry == lastParent
-            && parent.name == name)) { "Attribute '$name' on $type '${lastParent.name}' cannot reference itself" }
-        // @formatter:on
+        return listOf(Reference(Reference.Type.VARIABLE, ctx.IDENT().text, null))
     }
 
     override fun visitMessageReference(ctx: FluentParser.MessageReferenceContext): List<Expr> {
         val name = ctx.IDENT().text
+        val attribute = ctx.attributeAccessor()?.IDENT()?.text
+        val type = if (attribute != null) Reference.Type.ATTRIBUTE
+        else Reference.Type.MESSAGE
+        return listOf(Reference(type, name, attribute))
+    }
 
-        // Check for cyclic reference
-        val parent = context.parent
-        check(!(parent is ParserContext.ParentMessage && parent.name == name)) { "Message '$name' cannot reference itself" }
+    private fun expandElementsRecursively( // @formatter:off
+        arguments: Map<String, Expr>,
+        queue: ArrayDeque<PatternElement>,
+        elements: MutableList<PatternElement>
+    ) { // @formatter:on
+        val visited = ArrayDeque<Evaluable>() // For detecting multi-level cycles
 
-        val attributeAccessor = ctx.attributeAccessor()?.apply {
-            checkAttributeAccessor(this)
+        // Build an info string denoting the detected cycle based on the current visited stack
+        fun getCycle(): String = (visited.toList() + visited.first()).joinToString(" -> ") { element ->
+            when (element) {
+                is Term -> "-${element.name}"
+                is Attribute -> ".${element.name}"
+                else -> error("Unsupported element type ${element::class.simpleName}")
+            }
         }
-        val attribute = attributeAccessor?.IDENT()?.text
-        val type = if (attribute != null) ReferenceExpr.Type.ATTRIBUTE
-        else ReferenceExpr.Type.MESSAGE
-        return listOf(ReferenceExpr(type, name, attribute))
+        // Recursively expand all elements in the queue
+        while (queue.isNotEmpty()) {
+            when (val element = queue.removeFirst()) {
+                // Resolve all term references recursively
+                is TermReference -> {
+                    val termName = element.entryName
+                    val term = context.terms[termName] ?: error("No term named '$termName'")
+                    check(term !in visited) { "Term '$termName' cannot reference itself (${getCycle()})" }
+                    val attribName = element.attribName
+                    val attribute = attribName?.let(term.attributes::get)
+                    if (attribute != null) {
+                        check(attribute !in visited) { "Attribute '$attribName' cannot reference itself (${getCycle()})" }
+                        queue += attribute.elements
+                        visited += attribute
+                        continue
+                    }
+                    queue += term.elements
+                    visited += term
+                }
+                // Attempt to resolve variables which match the given arguments of the current parametrized term
+                is Reference if element.referenceType == Reference.Type.VARIABLE && arguments.isNotEmpty() -> {
+                    val varName = element.name
+                    val value = if (varName in arguments) arguments[varName]!! else element
+                    elements.add(0, value)
+                }
+                // Any other type of element is directly added to the output
+                else -> elements.add(0, element)
+            }
+        }
+    }
+
+    private fun expandElements(
+        elements: List<PatternElement>, arguments: Map<String, Expr>
+    ): List<PatternElement> {
+        val expandedElements = ArrayList<PatternElement>()
+        val queue = ArrayDeque<PatternElement>()
+        queue += elements
+        expandElementsRecursively(arguments, queue, expandedElements)
+        return expandedElements
     }
 
     override fun visitTermReference(ctx: FluentParser.TermReferenceContext): List<Expr> {
         val name = ctx.IDENT().text
+        val attribute = ctx.attributeAccessor()?.IDENT()?.text
 
-        // Check for cyclic reference
-        val parent = context.parent
-        check(!(parent is ParserContext.ParentTerm && parent.name == name)) { "Term '$name' cannot reference itself" }
-
-        val term = context.terms[name] ?: error("No term named '$name'")
-        val attributeAccessor = ctx.attributeAccessor()?.apply {
-            checkAttributeAccessor(this)
+        // Parse call arguments if there are any
+        val argList = ctx.callArguments()?.argumentList()
+        val arguments = HashMap<String, Expr>()
+        if (argList != null) for (argument in argList.argument()) {
+            val namedArgument = argument.namedArgument()
+            if (namedArgument != null) {
+                val name = namedArgument.IDENT().text
+                // @formatter:off
+                val value = namedArgument.stringLiteral()?.accept(context.exprParser)?.first()
+                    ?: namedArgument.numberLiteral()!!.accept(context.exprParser).first()
+                // @formatter:on
+                arguments[name] = value
+                continue
+            }
+            error("Parametrized term may not use positional arguments") // TODO: add support for this?
         }
-        val attribute = attributeAccessor?.IDENT()?.text
+
+        // If we are expanding terms, replace term refs with compound expression of actual elements
+        if (context.expandTerms) {
+            val term = context.terms[name] ?: error("No term named '$name'")
+            if (attribute != null) {
+                val attrib = term.attributes[attribute] ?: error("No attribute named '$attribute' on term '$name'")
+                return listOf(CompoundExpr(expandElements(attrib.elements, arguments)))
+            }
+            return listOf(CompoundExpr(expandElements(term.elements, arguments)))
+        }
+
+        // Otherwise insert term reference which are to be lowered in a secondary parsing step
         if (attribute != null) {
-            val attrib = term.attributes[attribute] ?: error("No attribute named '$attribute' on term '$name'")
-            return listOf(CompoundExpr(attrib.elements))
+            return listOf(TermReference(name, attribute, arguments))
         }
-        return listOf(CompoundExpr(term.elements))
+        return listOf(TermReference(name, null, arguments))
     }
 
     override fun visitFunctionReference(ctx: FluentParser.FunctionReferenceContext): List<Expr> {
@@ -111,14 +169,14 @@ class ExprParser(
             val value = argument.inlineExpression()!!.accept(context.exprParser).first()
             arguments += null to value
         }
-        return listOf(CallExpr(name, arguments))
+        return listOf(FunctionReference(name, arguments))
     }
 
     override fun visitNumberLiteral(ctx: FluentParser.NumberLiteralContext): List<Expr> {
         val numberText = ctx.NUMBER().text
         val value = if ('.' in numberText) numberText.toDouble()
         else numberText.toLong()
-        return listOf(NumberLiteral(value, value is Double))
+        return listOf(NumberLiteral(value))
     }
 
     override fun visitStringLiteral(ctx: FluentParser.StringLiteralContext): List<Expr> {

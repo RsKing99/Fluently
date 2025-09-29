@@ -20,7 +20,6 @@ import dev.karmakrafts.fluently.entry.Message
 import dev.karmakrafts.fluently.expr.Expr
 import dev.karmakrafts.fluently.frontend.FluentLexer
 import dev.karmakrafts.fluently.frontend.FluentParser
-import dev.karmakrafts.fluently.parser.MessageParser
 import dev.karmakrafts.fluently.parser.ParserContext
 import dev.karmakrafts.fluently.parser.TermParser
 import org.antlr.v4.kotlinruntime.CharStreams
@@ -28,9 +27,9 @@ import org.antlr.v4.kotlinruntime.CommonTokenStream
 import org.intellij.lang.annotations.Language
 
 data class LocalizationFile(
-    val messages: Map<String, Message>,
-    val globalFunctions: Map<String, Function> = emptyMap(),
-    val globalVariables: Map<String, Expr> = emptyMap()
+    val messages: MutableMap<String, Message> = HashMap(),
+    val globalFunctions: MutableMap<String, Function> = HashMap(),
+    val globalVariables: MutableMap<String, Expr> = HashMap()
 ) {
     companion object {
         fun parse(@Language("fluent") source: String): LocalizationFile {
@@ -38,40 +37,57 @@ data class LocalizationFile(
             val lexer = FluentLexer(charStream)
             val tokenStream = CommonTokenStream(lexer)
             val parser = FluentParser(tokenStream)
-            val file = parser.file()
-            val terms = file.accept(TermParser)
-            return LocalizationFile(file.accept(MessageParser(ParserContext(terms))))
+            val fileNode = parser.file()
+            val file = LocalizationFile()
+            val terms = fileNode.accept(TermParser(file))
+            val context = ParserContext(file, terms, true)
+            // @formatter:off
+            file.messages += fileNode.accept(context.messageParser)
+                .associateBy { message -> message.name }
+            // @formatter:on
+            return file
         }
     }
 
-    constructor(
-        messages: List<Message>,
-        globalFunctions: Map<String, Function> = emptyMap(),
-        globalVariables: Map<String, Expr> = emptyMap()
-    ) : this(messages.associateBy { message -> message.name }, globalFunctions, globalVariables)
+    operator fun get(name: String): Message? = messages[name]
+    operator fun get(entryName: String, attribName: String): Attribute? =
+        messages[entryName]?.attributes?.get(attribName)
 
-    inline fun getMessage( // @formatter:off
+    fun format( // @formatter:off
         name: String,
-        contextInit: EvaluationContext.() -> Unit = {}
+        context: EvaluationContext
     ): String { // @formatter:on
-        return messages[name]?.elements?.let { elements ->
-            val context = EvaluationContext(this).apply(contextInit)
-            elements.joinToString("") { element -> element.evaluate(context) }
-        } ?: name
+        return this[name]?.evaluate(context) ?: "<missing:$name>"
     }
 
-    operator fun get(name: String): String = getMessage(name)
+    inline fun format( // @formatter:off
+        name: String,
+        crossinline contextInit: EvaluationContextBuilder.() -> Unit = {}
+    ): String { // @formatter:on
+        return this[name]?.evaluate(this) {
+            functions += globalFunctions
+            variables += globalVariables
+            contextInit()
+        } ?: "<missing:$name>"
+    }
 
-    inline fun getMessageAttribute( // @formatter:off
+    fun formatAttribute( // @formatter:off
         entryName: String,
         attribName: String,
-        contextInit: EvaluationContext.() -> Unit = {}
+        context: EvaluationContext
     ): String { // @formatter:on
-        return messages[entryName]?.attributes[attribName]?.elements?.let { elements ->
-            val context = EvaluationContext(this).apply(contextInit)
-            elements.joinToString("") { element -> element.evaluate(context) }
-        } ?: "$entryName:$attribName"
+        return this[entryName, attribName]?.evaluate(context) ?: "<missing:$entryName.$attribName>"
     }
 
-    operator fun get(entryName: String, attribName: String): String = getMessageAttribute(entryName, attribName)
+    inline fun formatAttribute( // @formatter:off
+        entryName: String,
+        attribName: String,
+        crossinline contextInit: EvaluationContextBuilder.() -> Unit = {}
+    ): String { // @formatter:on
+        return this[entryName, attribName]?.evaluate(this) {
+            functions += globalFunctions
+            variables += globalVariables
+            contextInit()
+        } ?: "<missing:$entryName.$attribName>"
+    }
 }

@@ -17,17 +17,16 @@
 package dev.karmakrafts.fluently.entry
 
 import dev.karmakrafts.fluently.Attribute
+import dev.karmakrafts.fluently.Evaluable
 import dev.karmakrafts.fluently.EvaluationContext
 import dev.karmakrafts.fluently.element.PatternElement
 
-sealed interface LocalizationEntry {
+sealed interface LocalizationEntry : Evaluable {
     val name: String
     val elements: List<PatternElement>
     val attributes: Map<String, Attribute>
 
-    fun evaluate(context: EvaluationContext) {
-        for (element in elements) {
-            element.evaluate(context)
-        }
+    override fun evaluate(context: EvaluationContext): String {
+        return elements.joinToString("") { element -> element.evaluate(context) }
     }
 }

@@ -18,29 +18,19 @@ package dev.karmakrafts.fluently.expr
 
 import dev.karmakrafts.fluently.EvaluationContext
 
-data class ReferenceExpr( // @formatter:off
-    val referenceType: Type,
-    val name: String,
-    val attributeName: String?
+data class TermReference( // @formatter:off
+    val entryName: String,
+    val attribName: String?,
+    val arguments: Map<String, Expr>
 ) : Expr { // @formatter:on
-    enum class Type { // @formatter:off
-        MESSAGE,
-        ATTRIBUTE,
-        VARIABLE
-    } // @formatter:on
+    inline val isParametrized: Boolean
+        get() = arguments.isNotEmpty()
 
     override fun getType(context: EvaluationContext): ExprType {
-        return ExprType.STRING
+        error("Term reference hasn't been lowered")
     }
 
     override fun evaluate(context: EvaluationContext): String {
-        return when (referenceType) {
-            Type.MESSAGE -> context.file.getMessage(name)
-            Type.ATTRIBUTE -> attributeName?.let { attributeName ->
-                context.file.getMessageAttribute(name, attributeName)
-            } ?: "<missing:$name:$attributeName>"
-
-            Type.VARIABLE -> context.variables[name]?.evaluate(context) ?: "<missing:$name>"
-        }
+        error("Term reference hasn't been lowered")
     }
 }

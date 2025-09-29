@@ -18,7 +18,7 @@ package dev.karmakrafts.fluently.expr
 
 import dev.karmakrafts.fluently.EvaluationContext
 
-data class CallExpr( // @formatter:off
+data class FunctionReference( // @formatter:off
     val name: String,
     val arguments: List<Pair<String?, Expr>>
 ) : Expr { // @formatter:on

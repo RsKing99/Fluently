@@ -17,12 +17,15 @@
 package dev.karmakrafts.fluently.parser
 
 import dev.karmakrafts.fluently.Attribute
+import dev.karmakrafts.fluently.LocalizationFile
 import dev.karmakrafts.fluently.entry.Term
 import dev.karmakrafts.fluently.frontend.FluentParser
 import dev.karmakrafts.fluently.frontend.FluentParserBaseVisitor
 
-object TermParser : FluentParserBaseVisitor<Map<String, Term>>() {
-    private val parserContext: ParserContext = ParserContext(emptyMap())
+class TermParser(
+    file: LocalizationFile
+) : FluentParserBaseVisitor<Map<String, Term>>() {
+    private val parserContext: ParserContext = ParserContext(file, emptyMap(), false)
     private val patternElementParser: PatternElementParser = PatternElementParser(parserContext)
 
     override fun defaultResult(): Map<String, Term> = HashMap()
@@ -36,19 +39,16 @@ object TermParser : FluentParserBaseVisitor<Map<String, Term>>() {
 
     private fun parseAttribute(ctx: FluentParser.AttributeContext): Attribute {
         val name = ctx.IDENT().text
-        parserContext.pushAttributeParent(name)
         val attribElements = ctx.pattern()
             .patternElement()
             .asSequence()
             .map { element -> element.accept(patternElementParser).first() }
             .toList()
-        parserContext.popParent()
         return Attribute(name, attribElements)
     }
 
     override fun visitTerm(ctx: FluentParser.TermContext): Map<String, Term> {
         val name = ctx.IDENT().text
-        parserContext.pushTermParent(name)
         val elements = ctx.pattern()
             .patternElement()
             .asSequence()
@@ -60,7 +60,6 @@ object TermParser : FluentParserBaseVisitor<Map<String, Term>>() {
             .map(::parseAttribute)
             .associateBy { attribute -> attribute.name }
         // @formatter:on
-        parserContext.popParent()
         return mapOf(name to Term(name, elements, attributes))
     }
 }

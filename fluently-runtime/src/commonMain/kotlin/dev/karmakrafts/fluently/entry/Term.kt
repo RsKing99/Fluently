@@ -17,10 +17,15 @@
 package dev.karmakrafts.fluently.entry
 
 import dev.karmakrafts.fluently.Attribute
+import dev.karmakrafts.fluently.EvaluationContext
 import dev.karmakrafts.fluently.element.PatternElement
 
 data class Term(
     override val name: String,
     override val elements: List<PatternElement>,
     override val attributes: Map<String, Attribute>
-) : LocalizationEntry
+) : LocalizationEntry {
+    override fun evaluate(context: EvaluationContext): String {
+        error("Terms cannot be evaluated at runtime")
+    }
+}

@@ -18,8 +18,11 @@ package dev.karmakrafts.fluently
 
 interface Evaluable {
     fun evaluate(context: EvaluationContext): String
+}
 
-    fun evaluateCurrent(context: EvaluationContext) {
-        context.builder.append(evaluate(context))
-    }
+inline fun Evaluable.evaluate( // @formatter:off
+    file: LocalizationFile,
+    contextInit: EvaluationContextBuilder.() -> Unit = {}
+): String { // @formatter:on
+    return evaluate(EvaluationContextBuilder().apply(contextInit).build(file))
 }

@@ -19,15 +19,17 @@ package dev.karmakrafts.fluently.expr
 import dev.karmakrafts.fluently.EvaluationContext
 
 data class NumberLiteral( // @formatter:off
-    val value: Number,
-    val isFloat: Boolean = false
+    val value: Number
 ) : Expr { // @formatter:on
+    inline val isDouble: Boolean
+        get() = value is Double
+
     override fun getType(context: EvaluationContext): ExprType {
         return ExprType.NUMBER
     }
 
     override fun evaluate(context: EvaluationContext): String {
-        return if (isFloat) value.toDouble().toString()
+        return if (isDouble) value.toDouble().toString()
         else value.toLong().toString()
     }
 }
