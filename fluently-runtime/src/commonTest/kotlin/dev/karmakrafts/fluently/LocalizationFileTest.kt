@@ -49,11 +49,11 @@ class LocalizationFileTest {
             message-number-two = {-my-term} TESTING
             message-number-three = It's a { $test ->
                 [fox] 🦊
-                {" "}fops
+                {"\u0020"}fops
                 [wolp] 🐺
-                {" "}wolp
+                {"\u0020"}wolp
                 *[turtle] 🐢
-                {" "}turt
+                {"\u0020"}turt
             }! {DEXCL(name: "Pure Kotlin Fluent implementation", 1)}
         """.trimIndent())
         assertEquals(4, file.entries.size)

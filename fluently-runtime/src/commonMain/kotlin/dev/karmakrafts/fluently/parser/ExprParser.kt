@@ -99,7 +99,7 @@ object ExprParser : FluentParserBaseVisitor<List<Expr>>() {
                     })
                 }
                 is TerminalNode if child.symbol.type == FluentLexer.Tokens.UNICODE_CHAR -> {
-                    val value = child.text.substring(1).toInt(16)
+                    val value = child.text.substring(2).toInt(16)
                     builder.append(value.toChar())
                 }
                 is TerminalNode if child.symbol.type == FluentLexer.Tokens.STRING_TEXT -> {
