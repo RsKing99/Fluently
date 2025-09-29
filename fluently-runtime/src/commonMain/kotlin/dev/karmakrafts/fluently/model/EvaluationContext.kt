@@ -17,10 +17,25 @@
 package dev.karmakrafts.fluently.model
 
 import dev.karmakrafts.fluently.model.expr.Expr
+import dev.karmakrafts.fluently.model.expr.NumberLiteral
+import dev.karmakrafts.fluently.model.expr.StringLiteral
 
 data class EvaluationContext(
     val file: LocalizationFile,
     val functions: HashMap<String, Function> = HashMap(),
     val variables: HashMap<String, Expr> = HashMap(),
     val builder: StringBuilder = StringBuilder()
-)
+) {
+    fun variable(name: String, value: String) {
+        variables[name] = StringLiteral(value)
+    }
+
+    fun variable(name: String, value: Number) {
+        variables[name] = NumberLiteral(value)
+    }
+
+    inline fun function(block: FunctionBuilder.() -> Unit) {
+        val function = FunctionBuilder().apply(block).build()
+        functions[function.name] = function
+    }
+}

@@ -19,9 +19,11 @@ package dev.karmakrafts.fluently.model
 import dev.karmakrafts.fluently.model.expr.Expr
 import dev.karmakrafts.fluently.model.expr.ExprType
 
+typealias FunctionCallback = (ctx: EvaluationContext, args: Map<String, Expr>) -> Expr
+
 data class Function(
     val name: String,
     val returnType: ExprType,
     val parameters: List<Pair<String, ExprType>>,
-    val callback: (EvaluationContext, Map<String, Expr>) -> Expr
+    val callback: FunctionCallback
 )

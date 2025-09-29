@@ -58,11 +58,15 @@ class LocalizationFileTest {
         """.trimIndent())
         assertEquals(4, file.entries.size)
         assertEquals("""It's a 🐺${'\n'} wolp! Pure Kotlin Fluent implementation!!""", file.getMessage("message-number-three") {
-            variables["test"] = StringLiteral("wolp")
-            functions["DEXCL"] = Function("DEXCL", ExprType.STRING,
-                listOf("name" to ExprType.STRING, "index" to ExprType.NUMBER)) { ctx, args ->
-                val name = args.values.first().evaluate(ctx)
-                StringLiteral("$name!!")
+            variable("test", "wolp")
+            function {
+                name = "DEXCL"
+                parameter("name", ExprType.STRING)
+                parameter("index", ExprType.NUMBER)
+                action { ctx, args ->
+                    val name = args.values.first().evaluate(ctx)
+                    StringLiteral("$name!!")
+                }
             }
         })
     }
