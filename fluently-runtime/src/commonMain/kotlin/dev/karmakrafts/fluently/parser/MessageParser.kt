@@ -35,15 +35,19 @@ class MessageParser(
 
     private fun parseAttribute(ctx: FluentParser.AttributeContext): Attribute {
         val name = ctx.IDENT().text
+        context.pushAttributeParent(name)
         val attribElements = ctx.pattern()
             .patternElement()
             .asSequence()
             .map { element -> element.accept(context.patternElementParser).first() }
             .toList()
+        context.popParent()
         return Attribute(name, attribElements)
     }
 
     override fun visitMessage(ctx: FluentParser.MessageContext): List<Message> {
+        val name = ctx.IDENT().text
+        context.pushMessageParent(name)
         val elements = ctx.pattern()
             ?.patternElement()
             ?.asSequence()
@@ -55,10 +59,7 @@ class MessageParser(
             .map(::parseAttribute)
             .associateBy { attribute -> attribute.name }
         // @formatter:on
-        return listOf(Message(ctx.IDENT().text, elements, attributes))
-    }
-
-    override fun visitTerm(ctx: FluentParser.TermContext): List<Message> {
-        return emptyList()
+        context.popParent()
+        return listOf(Message(name, elements, attributes))
     }
 }

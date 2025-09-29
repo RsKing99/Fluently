@@ -55,6 +55,7 @@ class LocalizationFileTest {
                 *[turtle] 🐢
                 {"\u0020"}turt
             }! {DEXCL(name: "Pure Kotlin Fluent implementation", 1)}
+             .foo = Testing {message-number-three.foo}
         """.trimIndent())
         assertEquals(3, file.messages.size)
         assertEquals("""It's a 🐺${'\n'} wolp! Pure Kotlin Fluent implementation!!""", file.getMessage("message-number-three") {

@@ -21,7 +21,31 @@ import dev.karmakrafts.fluently.entry.Term
 data class ParserContext(
     val terms: Map<String, Term>
 ) {
+    sealed interface Parent {
+        val name: String
+    }
+
+    data class ParentTerm(override val name: String) : Parent
+    data class ParentMessage(override val name: String) : Parent
+    data class ParentAttribute(val entry: Parent, override val name: String) : Parent
+
     val messageParser: MessageParser = MessageParser(this)
     val patternElementParser: PatternElementParser = PatternElementParser(this)
     val exprParser: ExprParser = ExprParser(this)
+    val parentStack: ArrayDeque<Parent> = ArrayDeque()
+
+    inline val parent: Parent get() = parentStack.last()
+    inline val lastParent: Parent? get() = parentStack.getOrNull(parentStack.size - 2)
+
+    fun pushParent(parent: Parent) {
+        parentStack.addLast(parent)
+    }
+
+    fun popParent() {
+        parentStack.removeLast()
+    }
+
+    fun pushMessageParent(name: String) = pushParent(ParentMessage(name))
+    fun pushTermParent(name: String) = pushParent(ParentTerm(name))
+    fun pushAttributeParent(name: String) = pushParent(ParentAttribute(parent, name))
 }

@@ -44,19 +44,50 @@ class ExprParser(
         return listOf(ReferenceExpr(ReferenceExpr.Type.VARIABLE, ctx.IDENT().text, null))
     }
 
+    private fun checkAttributeAccessor(ctx: FluentParser.AttributeAccessorContext) {
+        // Check for cyclic reference
+        val name = ctx.IDENT().text
+        val parent = context.parent
+        val lastParent = context.lastParent ?: return
+        val type = if (lastParent is ParserContext.ParentMessage) "message"
+        else "term"
+        // @formatter:off
+        check(!(parent is ParserContext.ParentAttribute
+            && parent.entry == lastParent
+            && parent.name == name)) { "Attribute '$name' on $type '${lastParent.name}' cannot reference itself" }
+        // @formatter:on
+    }
+
     override fun visitMessageReference(ctx: FluentParser.MessageReferenceContext): List<Expr> {
-        val attribute = ctx.attributeAccessor()?.IDENT()?.text
+        val name = ctx.IDENT().text
+
+        // Check for cyclic reference
+        val parent = context.parent
+        check(!(parent is ParserContext.ParentMessage && parent.name == name)) { "Message '$name' cannot reference itself" }
+
+        val attributeAccessor = ctx.attributeAccessor()?.apply {
+            checkAttributeAccessor(this)
+        }
+        val attribute = attributeAccessor?.IDENT()?.text
         val type = if (attribute != null) ReferenceExpr.Type.ATTRIBUTE
         else ReferenceExpr.Type.MESSAGE
-        return listOf(ReferenceExpr(type, ctx.IDENT().text, attribute))
+        return listOf(ReferenceExpr(type, name, attribute))
     }
 
     override fun visitTermReference(ctx: FluentParser.TermReferenceContext): List<Expr> {
         val name = ctx.IDENT().text
+
+        // Check for cyclic reference
+        val parent = context.parent
+        check(!(parent is ParserContext.ParentTerm && parent.name == name)) { "Term '$name' cannot reference itself" }
+
         val term = context.terms[name] ?: error("No term named '$name'")
-        val attribName = ctx.attributeAccessor()?.IDENT()?.text
-        if (attribName != null) {
-            val attrib = term.attributes[attribName] ?: error("No attribute named '$attribName' on term '$name'")
+        val attributeAccessor = ctx.attributeAccessor()?.apply {
+            checkAttributeAccessor(this)
+        }
+        val attribute = attributeAccessor?.IDENT()?.text
+        if (attribute != null) {
+            val attrib = term.attributes[attribute] ?: error("No attribute named '$attribute' on term '$name'")
             return listOf(CompoundExpr(attrib.elements))
         }
         return listOf(CompoundExpr(term.elements))
