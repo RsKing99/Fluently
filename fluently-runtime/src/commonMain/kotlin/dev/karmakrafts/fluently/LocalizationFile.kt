@@ -16,19 +16,19 @@
 
 package dev.karmakrafts.fluently
 
-import dev.karmakrafts.fluently.entry.LocalizationEntry
 import dev.karmakrafts.fluently.entry.Message
-import dev.karmakrafts.fluently.entry.Term
 import dev.karmakrafts.fluently.expr.Expr
 import dev.karmakrafts.fluently.frontend.FluentLexer
 import dev.karmakrafts.fluently.frontend.FluentParser
-import dev.karmakrafts.fluently.parser.LocalizationEntryParser
+import dev.karmakrafts.fluently.parser.MessageParser
+import dev.karmakrafts.fluently.parser.ParserContext
+import dev.karmakrafts.fluently.parser.TermParser
 import org.antlr.v4.kotlinruntime.CharStreams
 import org.antlr.v4.kotlinruntime.CommonTokenStream
 import org.intellij.lang.annotations.Language
 
 data class LocalizationFile(
-    val entries: List<LocalizationEntry> = emptyList(),
+    val messages: Map<String, Message>,
     val globalFunctions: Map<String, Function> = emptyMap(),
     val globalVariables: Map<String, Expr> = emptyMap()
 ) {
@@ -39,63 +39,39 @@ data class LocalizationFile(
             val tokenStream = CommonTokenStream(lexer)
             val parser = FluentParser(tokenStream)
             val file = parser.file()
-            return LocalizationFile(file.accept(LocalizationEntryParser))
+            val terms = file.accept(TermParser)
+            return LocalizationFile(file.accept(MessageParser(ParserContext(terms))))
         }
     }
 
-    private inline fun <reified E : LocalizationEntry> elementsByType(): Lazy<Map<String, E>> = lazy { // @formatter:off
-        entries.asSequence()
-            .filterIsInstance<E>()
-            .associateBy { entry -> entry.name }
-    } // @formatter:on
+    constructor(
+        messages: List<Message>,
+        globalFunctions: Map<String, Function> = emptyMap(),
+        globalVariables: Map<String, Expr> = emptyMap()
+    ) : this(messages.associateBy { message -> message.name }, globalFunctions, globalVariables)
 
-    val messages: Map<String, Message> by elementsByType<Message>()
-    val terms: Map<String, Term> by elementsByType<Term>()
-
-    @PublishedApi
-    internal inline fun <E : LocalizationEntry> evaluate( // @formatter:off
-        entries: Map<String, E>,
+    inline fun getMessage( // @formatter:off
         name: String,
-        contextInit: EvaluationContext.() -> Unit
+        contextInit: EvaluationContext.() -> Unit = {}
     ): String { // @formatter:on
-        return entries[name]?.elements?.let { elements ->
+        return messages[name]?.elements?.let { elements ->
             val context = EvaluationContext(this).apply(contextInit)
             elements.joinToString("") { element -> element.evaluate(context) }
         } ?: name
     }
 
-    @PublishedApi
-    internal inline fun <E : LocalizationEntry> evaluateAttribute( // @formatter:off
-        entries: Map<String, E>,
+    operator fun get(name: String): String = getMessage(name)
+
+    inline fun getMessageAttribute( // @formatter:off
         entryName: String,
         attribName: String,
-        contextInit: EvaluationContext.() -> Unit
+        contextInit: EvaluationContext.() -> Unit = {}
     ): String { // @formatter:on
-        return entries[entryName]?.attributes[attribName]?.elements?.let { elements ->
+        return messages[entryName]?.attributes[attribName]?.elements?.let { elements ->
             val context = EvaluationContext(this).apply(contextInit)
             elements.joinToString("") { element -> element.evaluate(context) }
         } ?: "$entryName:$attribName"
     }
 
-    inline fun getMessage(// @formatter:off
-        name: String,
-        contextInit: EvaluationContext.() -> Unit = {}
-    ): String = evaluate(messages, name, contextInit) // @formatter:on
-
-    inline fun getMessageAttribute(// @formatter:off
-        entryName: String,
-        attribName: String,
-        contextInit: EvaluationContext.() -> Unit = {}
-    ): String = evaluateAttribute(messages, entryName, attribName, contextInit) // @formatter:on
-
-    inline fun getTerm(// @formatter:off
-        name: String,
-        contextInit: EvaluationContext.() -> Unit = {}
-    ): String = evaluate(terms, name, contextInit) // @formatter:on
-
-    inline fun getTermAttribute(// @formatter:off
-        entryName: String,
-        attribName: String,
-        contextInit: EvaluationContext.() -> Unit = {}
-    ): String = evaluateAttribute(terms, entryName, attribName, contextInit) // @formatter:on
+    operator fun get(entryName: String, attribName: String): String = getMessageAttribute(entryName, attribName)
 }

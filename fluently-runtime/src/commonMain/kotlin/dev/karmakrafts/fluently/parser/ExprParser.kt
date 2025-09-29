@@ -17,6 +17,7 @@
 package dev.karmakrafts.fluently.parser
 
 import dev.karmakrafts.fluently.expr.CallExpr
+import dev.karmakrafts.fluently.expr.CompoundExpr
 import dev.karmakrafts.fluently.expr.Expr
 import dev.karmakrafts.fluently.expr.NumberLiteral
 import dev.karmakrafts.fluently.expr.ReferenceExpr
@@ -27,7 +28,9 @@ import dev.karmakrafts.fluently.frontend.FluentParser
 import dev.karmakrafts.fluently.frontend.FluentParserBaseVisitor
 import org.antlr.v4.kotlinruntime.tree.TerminalNode
 
-object ExprParser : FluentParserBaseVisitor<List<Expr>>() {
+class ExprParser(
+    val context: ParserContext
+) : FluentParserBaseVisitor<List<Expr>>() {
     override fun defaultResult(): List<Expr> = ArrayList()
 
     override fun aggregateResult( // @formatter:off
@@ -43,16 +46,20 @@ object ExprParser : FluentParserBaseVisitor<List<Expr>>() {
 
     override fun visitMessageReference(ctx: FluentParser.MessageReferenceContext): List<Expr> {
         val attribute = ctx.attributeAccessor()?.IDENT()?.text
-        val type = if (attribute != null) ReferenceExpr.Type.MESSAGE_ATTRIB
+        val type = if (attribute != null) ReferenceExpr.Type.ATTRIBUTE
         else ReferenceExpr.Type.MESSAGE
         return listOf(ReferenceExpr(type, ctx.IDENT().text, attribute))
     }
 
     override fun visitTermReference(ctx: FluentParser.TermReferenceContext): List<Expr> {
-        val attribute = ctx.attributeAccessor()?.IDENT()?.text
-        val type = if (attribute != null) ReferenceExpr.Type.TERM_ATTRIB
-        else ReferenceExpr.Type.TERM
-        return listOf(ReferenceExpr(type, ctx.IDENT().text, attribute))
+        val name = ctx.IDENT().text
+        val term = context.terms[name] ?: error("No term named '$name'")
+        val attribName = ctx.attributeAccessor()?.IDENT()?.text
+        if (attribName != null) {
+            val attrib = term.attributes[attribName] ?: error("No attribute named '$attribName' on term '$name'")
+            return listOf(CompoundExpr(attrib.elements))
+        }
+        return listOf(CompoundExpr(term.elements))
     }
 
     override fun visitFunctionReference(ctx: FluentParser.FunctionReferenceContext): List<Expr> {
@@ -64,13 +71,13 @@ object ExprParser : FluentParserBaseVisitor<List<Expr>>() {
             if (namedArgument != null) {
                 val name = namedArgument.IDENT().text
                 // @formatter:off
-                val value = namedArgument.stringLiteral()?.accept(ExprParser)?.first()
-                    ?: namedArgument.numberLiteral()!!.accept(ExprParser).first()
+                val value = namedArgument.stringLiteral()?.accept(context.exprParser)?.first()
+                    ?: namedArgument.numberLiteral()!!.accept(context.exprParser).first()
                 // @formatter:on
                 arguments += name to value
                 continue
             }
-            val value = argument.inlineExpression()!!.accept(ExprParser).first()
+            val value = argument.inlineExpression()!!.accept(context.exprParser).first()
             arguments += null to value
         }
         return listOf(CallExpr(name, arguments))
@@ -108,10 +115,10 @@ object ExprParser : FluentParserBaseVisitor<List<Expr>>() {
     override fun visitSelectExpression(ctx: FluentParser.SelectExpressionContext): List<Expr> {
         fun parseVariantKey(ctx: FluentParser.VariantKeyContext): Expr {
             ctx.IDENT()?.text?.let { key -> return StringLiteral(key) } // Ident keys are interpreted as strings here
-            return ctx.numberLiteral()!!.accept(ExprParser).first()
+            return ctx.numberLiteral()!!.accept(context.exprParser).first()
         }
 
-        val variable = ctx.inlineExpression().accept(ExprParser).first()
+        val variable = ctx.inlineExpression().accept(context.exprParser).first()
 
         val variantList = ctx.variantList()
         val variants = LinkedHashMap<Expr, SelectExpr.Variant>()
@@ -120,7 +127,7 @@ object ExprParser : FluentParserBaseVisitor<List<Expr>>() {
             val elements = variant.pattern()
                 .patternElement()
                 .asSequence()
-                .map { element -> element.accept(PatternElementParser).first() }
+                .map { element -> element.accept(context.patternElementParser).first() }
                 .toList()
             variants[key] = SelectExpr.Variant(key, elements)
         }
@@ -130,7 +137,7 @@ object ExprParser : FluentParserBaseVisitor<List<Expr>>() {
         val elements = defaultVariant.pattern()
             .patternElement()
             .asSequence()
-            .map { element -> element.accept(PatternElementParser).first() }
+            .map { element -> element.accept(context.patternElementParser).first() }
             .toList()
         variants[defaultKey] = SelectExpr.Variant(defaultKey, elements, true)
 

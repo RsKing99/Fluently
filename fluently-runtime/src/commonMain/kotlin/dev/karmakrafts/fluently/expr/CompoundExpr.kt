@@ -17,30 +17,14 @@
 package dev.karmakrafts.fluently.expr
 
 import dev.karmakrafts.fluently.EvaluationContext
+import dev.karmakrafts.fluently.element.PatternElement
 
-data class ReferenceExpr( // @formatter:off
-    val referenceType: Type,
-    val name: String,
-    val attributeName: String?
-) : Expr { // @formatter:on
-    enum class Type { // @formatter:off
-        MESSAGE,
-        ATTRIBUTE,
-        VARIABLE
-    } // @formatter:on
-
+data class CompoundExpr(val elements: List<PatternElement>) : Expr {
     override fun getType(context: EvaluationContext): ExprType {
         return ExprType.STRING
     }
 
     override fun evaluate(context: EvaluationContext): String {
-        return when (referenceType) {
-            Type.MESSAGE -> context.file.getMessage(name)
-            Type.ATTRIBUTE -> attributeName?.let { attributeName ->
-                context.file.getMessageAttribute(name, attributeName)
-            } ?: "<missing:$name:$attributeName>"
-
-            Type.VARIABLE -> context.variables[name]?.evaluate(context) ?: "<missing:$name>"
-        }
+        return elements.joinToString("") { element -> element.evaluate(context) }
     }
 }

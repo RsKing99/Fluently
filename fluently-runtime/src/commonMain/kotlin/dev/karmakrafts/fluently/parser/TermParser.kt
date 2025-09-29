@@ -17,19 +17,19 @@
 package dev.karmakrafts.fluently.parser
 
 import dev.karmakrafts.fluently.Attribute
-import dev.karmakrafts.fluently.entry.LocalizationEntry
-import dev.karmakrafts.fluently.entry.Message
 import dev.karmakrafts.fluently.entry.Term
 import dev.karmakrafts.fluently.frontend.FluentParser
 import dev.karmakrafts.fluently.frontend.FluentParserBaseVisitor
 
-object LocalizationEntryParser : FluentParserBaseVisitor<List<LocalizationEntry>>() {
-    override fun defaultResult(): List<LocalizationEntry> = ArrayList()
+object TermParser : FluentParserBaseVisitor<Map<String, Term>>() {
+    private val patternElementParser: PatternElementParser = PatternElementParser(ParserContext(emptyMap()))
+
+    override fun defaultResult(): Map<String, Term> = HashMap()
 
     override fun aggregateResult( // @formatter:off
-        aggregate: List<LocalizationEntry>,
-        nextResult: List<LocalizationEntry>
-    ): List<LocalizationEntry> { // @formatter:on
+        aggregate: Map<String, Term>,
+        nextResult: Map<String, Term>
+    ): Map<String, Term> { // @formatter:on
         return aggregate + nextResult
     }
 
@@ -38,31 +38,17 @@ object LocalizationEntryParser : FluentParserBaseVisitor<List<LocalizationEntry>
         val attribElements = ctx.pattern()
             .patternElement()
             .asSequence()
-            .map { element -> element.accept(PatternElementParser).first() }
+            .map { element -> element.accept(patternElementParser).first() }
             .toList()
         return Attribute(name, attribElements)
     }
 
-    override fun visitMessage(ctx: FluentParser.MessageContext): List<LocalizationEntry> {
-        val elements = ctx.pattern()
-            ?.patternElement()
-            ?.asSequence()
-            ?.map { element -> element.accept(PatternElementParser).first() }
-            ?.toList() ?: emptyList()
-        // @formatter:off
-        val attributes = ctx.attribute()
-            .asSequence()
-            .map(::parseAttribute)
-            .associateBy { attribute -> attribute.name }
-        // @formatter:on
-        return listOf(Message(ctx.IDENT().text, elements, attributes))
-    }
-
-    override fun visitTerm(ctx: FluentParser.TermContext): List<LocalizationEntry> {
+    override fun visitTerm(ctx: FluentParser.TermContext): Map<String, Term> {
+        val name = ctx.IDENT().text
         val elements = ctx.pattern()
             .patternElement()
             .asSequence()
-            .map { element -> element.accept(PatternElementParser).first() }
+            .map { element -> element.accept(patternElementParser).first() }
             .toList()
         // @formatter:off
         val attributes = ctx.attribute()
@@ -70,6 +56,6 @@ object LocalizationEntryParser : FluentParserBaseVisitor<List<LocalizationEntry>
             .map(::parseAttribute)
             .associateBy { attribute -> attribute.name }
         // @formatter:on
-        return listOf(Term(ctx.IDENT().text, elements, attributes))
+        return mapOf(name to Term(name, elements, attributes))
     }
 }

@@ -26,7 +26,7 @@ class LocalizationFileTest {
     @Test
     fun `Parse empty file`() {
         val file = LocalizationFile.parse("")
-        assertTrue(file.entries.isEmpty())
+        assertTrue(file.messages.isEmpty())
     }
 
     @Test
@@ -36,7 +36,7 @@ class LocalizationFileTest {
             message-number-one = HELLO
             message-number-two = HELLOU
         """.trimIndent())
-        assertEquals(3, file.entries.size)
+        assertEquals(2, file.messages.size)
     }
 
     @Test
@@ -54,7 +54,7 @@ class LocalizationFileTest {
                 {"\u0020"}turt
             }! {DEXCL(name: "Pure Kotlin Fluent implementation", 1)}
         """.trimIndent())
-        assertEquals(4, file.entries.size)
+        assertEquals(3, file.messages.size)
         assertEquals("""It's a 🐺${'\n'} wolp! Pure Kotlin Fluent implementation!!""", file.getMessage("message-number-three") {
             variable("test", "wolp")
             function {

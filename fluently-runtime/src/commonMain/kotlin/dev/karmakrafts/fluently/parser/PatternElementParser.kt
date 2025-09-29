@@ -22,7 +22,9 @@ import dev.karmakrafts.fluently.element.Text
 import dev.karmakrafts.fluently.frontend.FluentParser
 import dev.karmakrafts.fluently.frontend.FluentParserBaseVisitor
 
-object PatternElementParser : FluentParserBaseVisitor<List<PatternElement>>() {
+class PatternElementParser(
+    val context: ParserContext
+) : FluentParserBaseVisitor<List<PatternElement>>() {
     override fun defaultResult(): List<PatternElement> = ArrayList()
 
     override fun aggregateResult( // @formatter:off
@@ -37,18 +39,18 @@ object PatternElementParser : FluentParserBaseVisitor<List<PatternElement>>() {
     }
 
     override fun visitBlockText(ctx: FluentParser.BlockTextContext): List<PatternElement> {
-        return listOf(Block(ctx.inlineText().accept(PatternElementParser).first()))
+        return listOf(Block(ctx.inlineText().accept(this).first()))
     }
 
     override fun visitInlinePlaceable(ctx: FluentParser.InlinePlaceableContext): List<PatternElement> {
         val selectExpression = ctx.selectExpression()
         if (selectExpression != null) {
-            return listOf(selectExpression.accept(ExprParser).first())
+            return listOf(selectExpression.accept(context.exprParser).first())
         }
-        return listOf(ctx.inlineExpression()!!.accept(ExprParser).first())
+        return listOf(ctx.inlineExpression()!!.accept(context.exprParser).first())
     }
 
     override fun visitBlockPlaceable(ctx: FluentParser.BlockPlaceableContext): List<PatternElement> {
-        return listOf(Block(ctx.inlinePlaceable().accept(ExprParser).first()))
+        return listOf(Block(ctx.inlinePlaceable().accept(context.exprParser).first()))
     }
 }
