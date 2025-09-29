@@ -16,15 +16,15 @@
 
 package dev.karmakrafts.fluently.parser
 
+import dev.karmakrafts.fluently.expr.CallExpr
+import dev.karmakrafts.fluently.expr.Expr
+import dev.karmakrafts.fluently.expr.NumberLiteral
+import dev.karmakrafts.fluently.expr.ReferenceExpr
+import dev.karmakrafts.fluently.expr.SelectExpr
+import dev.karmakrafts.fluently.expr.StringLiteral
 import dev.karmakrafts.fluently.frontend.FluentLexer
 import dev.karmakrafts.fluently.frontend.FluentParser
 import dev.karmakrafts.fluently.frontend.FluentParserBaseVisitor
-import dev.karmakrafts.fluently.model.expr.CallExpr
-import dev.karmakrafts.fluently.model.expr.Expr
-import dev.karmakrafts.fluently.model.expr.NumberLiteral
-import dev.karmakrafts.fluently.model.expr.ReferenceExpr
-import dev.karmakrafts.fluently.model.expr.SelectExpr
-import dev.karmakrafts.fluently.model.expr.StringLiteral
 import org.antlr.v4.kotlinruntime.tree.TerminalNode
 
 object ExprParser : FluentParserBaseVisitor<List<Expr>>() {

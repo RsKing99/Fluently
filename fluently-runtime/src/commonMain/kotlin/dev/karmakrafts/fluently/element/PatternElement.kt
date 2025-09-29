@@ -14,16 +14,8 @@
  * limitations under the License.
  */
 
-package dev.karmakrafts.fluently.model
+package dev.karmakrafts.fluently.element
 
-import dev.karmakrafts.fluently.model.expr.Expr
-import dev.karmakrafts.fluently.model.expr.ExprType
+import dev.karmakrafts.fluently.Evaluable
 
-typealias FunctionCallback = (ctx: EvaluationContext, args: Map<String, Expr>) -> Expr
-
-data class Function(
-    val name: String,
-    val returnType: ExprType,
-    val parameters: List<Pair<String, ExprType>>,
-    val callback: FunctionCallback
-)
+interface PatternElement : Evaluable

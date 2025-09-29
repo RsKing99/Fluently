@@ -14,14 +14,13 @@
  * limitations under the License.
  */
 
-package dev.karmakrafts.fluently.model.element
+package dev.karmakrafts.fluently.entry
 
-import dev.karmakrafts.fluently.model.EvaluationContext
+import dev.karmakrafts.fluently.Attribute
+import dev.karmakrafts.fluently.element.PatternElement
 
-data class Block(
-    val element: PatternElement
-) : PatternElement {
-    override fun evaluate(context: EvaluationContext): String {
-        return "\n${element.evaluate(context)}"
-    }
-}
+data class Term(
+    override val name: String,
+    override val elements: List<PatternElement>,
+    override val attributes: Map<String, Attribute>
+) : LocalizationEntry

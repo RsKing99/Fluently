@@ -14,11 +14,13 @@
  * limitations under the License.
  */
 
-package dev.karmakrafts.fluently.model.expr
+package dev.karmakrafts.fluently.entry
 
-import dev.karmakrafts.fluently.model.EvaluationContext
+import dev.karmakrafts.fluently.Attribute
+import dev.karmakrafts.fluently.element.PatternElement
 
-data class StringLiteral(val value: String) : Expr {
-    override fun getType(context: EvaluationContext): ExprType = ExprType.STRING
-    override fun evaluate(context: EvaluationContext): String = value
-}
+data class Message(
+    override val name: String,
+    override val elements: List<PatternElement>,
+    override val attributes: Map<String, Attribute>
+) : LocalizationEntry

@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-package dev.karmakrafts.fluently.model
+package dev.karmakrafts.fluently
 
-import dev.karmakrafts.fluently.model.expr.Expr
-import dev.karmakrafts.fluently.model.expr.NumberLiteral
-import dev.karmakrafts.fluently.model.expr.StringLiteral
+import dev.karmakrafts.fluently.expr.Expr
+import dev.karmakrafts.fluently.expr.NumberLiteral
+import dev.karmakrafts.fluently.expr.StringLiteral
 
 data class EvaluationContext(
     val file: LocalizationFile,

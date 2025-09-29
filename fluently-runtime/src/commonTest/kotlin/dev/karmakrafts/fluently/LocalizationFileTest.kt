@@ -16,10 +16,8 @@
 
 package dev.karmakrafts.fluently
 
-import dev.karmakrafts.fluently.model.Function
-import dev.karmakrafts.fluently.model.LocalizationFile
-import dev.karmakrafts.fluently.model.expr.ExprType
-import dev.karmakrafts.fluently.model.expr.StringLiteral
+import dev.karmakrafts.fluently.expr.ExprType
+import dev.karmakrafts.fluently.expr.StringLiteral
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue

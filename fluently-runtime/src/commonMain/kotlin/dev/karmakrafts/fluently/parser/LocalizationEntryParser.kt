@@ -16,12 +16,12 @@
 
 package dev.karmakrafts.fluently.parser
 
+import dev.karmakrafts.fluently.Attribute
+import dev.karmakrafts.fluently.entry.LocalizationEntry
+import dev.karmakrafts.fluently.entry.Message
+import dev.karmakrafts.fluently.entry.Term
 import dev.karmakrafts.fluently.frontend.FluentParser
 import dev.karmakrafts.fluently.frontend.FluentParserBaseVisitor
-import dev.karmakrafts.fluently.model.Attribute
-import dev.karmakrafts.fluently.model.entry.LocalizationEntry
-import dev.karmakrafts.fluently.model.entry.Message
-import dev.karmakrafts.fluently.model.entry.Term
 
 object LocalizationEntryParser : FluentParserBaseVisitor<List<LocalizationEntry>>() {
     override fun defaultResult(): List<LocalizationEntry> = ArrayList()

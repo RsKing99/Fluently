@@ -14,11 +14,14 @@
  * limitations under the License.
  */
 
-package dev.karmakrafts.fluently.model.expr
+package dev.karmakrafts.fluently.element
 
-import dev.karmakrafts.fluently.model.EvaluationContext
-import dev.karmakrafts.fluently.model.element.PatternElement
+import dev.karmakrafts.fluently.EvaluationContext
 
-interface Expr : PatternElement {
-    fun getType(context: EvaluationContext): ExprType
+data class Block(
+    val element: PatternElement
+) : PatternElement {
+    override fun evaluate(context: EvaluationContext): String {
+        return "\n${element.evaluate(context)}"
+    }
 }

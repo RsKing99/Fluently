@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 
-package dev.karmakrafts.fluently.model.expr
+package dev.karmakrafts.fluently.element
 
-enum class ExprType {
-    STRING, NUMBER
+import dev.karmakrafts.fluently.EvaluationContext
+
+data class Text(val value: String) : PatternElement {
+    override fun evaluate(context: EvaluationContext): String = value
 }

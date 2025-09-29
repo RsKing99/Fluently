@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
-package dev.karmakrafts.fluently.model.element
+package dev.karmakrafts.fluently.expr
 
-import dev.karmakrafts.fluently.model.EvaluationContext
+import dev.karmakrafts.fluently.EvaluationContext
+import dev.karmakrafts.fluently.element.PatternElement
 
-data class Text(val value: String) : PatternElement {
-    override fun evaluate(context: EvaluationContext): String = value
+interface Expr : PatternElement {
+    fun getType(context: EvaluationContext): ExprType
 }

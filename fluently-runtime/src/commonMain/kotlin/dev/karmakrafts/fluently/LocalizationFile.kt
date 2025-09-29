@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-package dev.karmakrafts.fluently.model
+package dev.karmakrafts.fluently
 
+import dev.karmakrafts.fluently.entry.LocalizationEntry
+import dev.karmakrafts.fluently.entry.Message
+import dev.karmakrafts.fluently.entry.Term
+import dev.karmakrafts.fluently.expr.Expr
 import dev.karmakrafts.fluently.frontend.FluentLexer
 import dev.karmakrafts.fluently.frontend.FluentParser
-import dev.karmakrafts.fluently.model.entry.LocalizationEntry
-import dev.karmakrafts.fluently.model.entry.Message
-import dev.karmakrafts.fluently.model.entry.Term
-import dev.karmakrafts.fluently.model.expr.Expr
 import dev.karmakrafts.fluently.parser.LocalizationEntryParser
 import org.antlr.v4.kotlinruntime.CharStreams
 import org.antlr.v4.kotlinruntime.CommonTokenStream

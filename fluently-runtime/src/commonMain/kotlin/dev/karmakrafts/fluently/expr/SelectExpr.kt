@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-package dev.karmakrafts.fluently.model.expr
+package dev.karmakrafts.fluently.expr
 
-import dev.karmakrafts.fluently.model.EvaluationContext
-import dev.karmakrafts.fluently.model.element.PatternElement
+import dev.karmakrafts.fluently.EvaluationContext
+import dev.karmakrafts.fluently.element.PatternElement
 
 data class SelectExpr( // @formatter:off
     val variable: Expr,

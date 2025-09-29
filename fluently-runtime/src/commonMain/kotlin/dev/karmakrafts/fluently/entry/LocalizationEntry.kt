@@ -14,12 +14,20 @@
  * limitations under the License.
  */
 
-package dev.karmakrafts.fluently.model
+package dev.karmakrafts.fluently.entry
 
-interface Evaluable {
-    fun evaluate(context: EvaluationContext): String
+import dev.karmakrafts.fluently.Attribute
+import dev.karmakrafts.fluently.EvaluationContext
+import dev.karmakrafts.fluently.element.PatternElement
 
-    fun evaluateCurrent(context: EvaluationContext) {
-        context.builder.append(evaluate(context))
+sealed interface LocalizationEntry {
+    val name: String
+    val elements: List<PatternElement>
+    val attributes: Map<String, Attribute>
+
+    fun evaluate(context: EvaluationContext) {
+        for (element in elements) {
+            element.evaluate(context)
+        }
     }
 }

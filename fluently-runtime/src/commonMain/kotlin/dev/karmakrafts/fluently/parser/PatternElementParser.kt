@@ -16,11 +16,11 @@
 
 package dev.karmakrafts.fluently.parser
 
+import dev.karmakrafts.fluently.element.Block
+import dev.karmakrafts.fluently.element.PatternElement
+import dev.karmakrafts.fluently.element.Text
 import dev.karmakrafts.fluently.frontend.FluentParser
 import dev.karmakrafts.fluently.frontend.FluentParserBaseVisitor
-import dev.karmakrafts.fluently.model.element.Block
-import dev.karmakrafts.fluently.model.element.PatternElement
-import dev.karmakrafts.fluently.model.element.Text
 
 object PatternElementParser : FluentParserBaseVisitor<List<PatternElement>>() {
     override fun defaultResult(): List<PatternElement> = ArrayList()

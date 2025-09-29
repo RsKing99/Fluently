@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-package dev.karmakrafts.fluently.model
+package dev.karmakrafts.fluently
 
-import dev.karmakrafts.fluently.model.expr.ExprType
-import dev.karmakrafts.fluently.model.expr.StringLiteral
+import dev.karmakrafts.fluently.expr.ExprType
+import dev.karmakrafts.fluently.expr.StringLiteral
 
 class FunctionBuilder @PublishedApi internal constructor() {
     lateinit var name: String

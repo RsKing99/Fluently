@@ -14,13 +14,20 @@
  * limitations under the License.
  */
 
-package dev.karmakrafts.fluently.model.entry
+package dev.karmakrafts.fluently.expr
 
-import dev.karmakrafts.fluently.model.Attribute
-import dev.karmakrafts.fluently.model.element.PatternElement
+import dev.karmakrafts.fluently.EvaluationContext
 
-data class Message(
-    override val name: String,
-    override val elements: List<PatternElement>,
-    override val attributes: Map<String, Attribute>
-) : LocalizationEntry
+data class NumberLiteral( // @formatter:off
+    val value: Number,
+    val isFloat: Boolean = false
+) : Expr { // @formatter:on
+    override fun getType(context: EvaluationContext): ExprType {
+        return ExprType.NUMBER
+    }
+
+    override fun evaluate(context: EvaluationContext): String {
+        return if (isFloat) value.toDouble().toString()
+        else value.toLong().toString()
+    }
+}

@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-package dev.karmakrafts.fluently.model.expr
+package dev.karmakrafts.fluently.expr
 
-import dev.karmakrafts.fluently.model.EvaluationContext
+import dev.karmakrafts.fluently.EvaluationContext
 
 data class CallExpr( // @formatter:off
     val name: String,

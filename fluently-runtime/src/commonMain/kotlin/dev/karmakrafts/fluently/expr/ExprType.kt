@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-package dev.karmakrafts.fluently.model.element
+package dev.karmakrafts.fluently.expr
 
-import dev.karmakrafts.fluently.model.Evaluable
-
-interface PatternElement : Evaluable
+enum class ExprType {
+    STRING, NUMBER
+}

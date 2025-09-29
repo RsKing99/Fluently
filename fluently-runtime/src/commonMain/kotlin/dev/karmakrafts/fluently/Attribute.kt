@@ -14,20 +14,15 @@
  * limitations under the License.
  */
 
-package dev.karmakrafts.fluently.model.expr
+package dev.karmakrafts.fluently
 
-import dev.karmakrafts.fluently.model.EvaluationContext
+import dev.karmakrafts.fluently.element.PatternElement
 
-data class NumberLiteral( // @formatter:off
-    val value: Number,
-    val isFloat: Boolean = false
-) : Expr { // @formatter:on
-    override fun getType(context: EvaluationContext): ExprType {
-        return ExprType.NUMBER
-    }
-
+data class Attribute( // @formatter:off
+    val name: String,
+    val elements: List<PatternElement>
+) : Evaluable { // @formatter:on
     override fun evaluate(context: EvaluationContext): String {
-        return if (isFloat) value.toDouble().toString()
-        else value.toLong().toString()
+        return elements.joinToString("") { element -> element.evaluate(context) }
     }
 }
