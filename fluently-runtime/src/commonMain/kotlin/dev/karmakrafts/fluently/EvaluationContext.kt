@@ -34,8 +34,8 @@ data class EvaluationContext(
         variables[name] = NumberLiteral(value)
     }
 
-    inline fun function(block: FunctionBuilder.() -> Unit) {
-        val function = FunctionBuilder().apply(block).build()
-        functions[function.name] = function
+    inline fun function(name: String, block: FunctionBuilder.() -> Unit) {
+        val function = FunctionBuilder(name).apply(block).build()
+        functions[name] = function
     }
 }

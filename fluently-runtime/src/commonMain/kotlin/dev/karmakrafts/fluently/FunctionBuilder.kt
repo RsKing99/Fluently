@@ -19,8 +19,7 @@ package dev.karmakrafts.fluently
 import dev.karmakrafts.fluently.expr.ExprType
 import dev.karmakrafts.fluently.expr.StringLiteral
 
-class FunctionBuilder @PublishedApi internal constructor() {
-    lateinit var name: String
+class FunctionBuilder @PublishedApi internal constructor(private val name: String) {
     var returnType: ExprType = ExprType.STRING
     private val parameters: ArrayList<Pair<String, ExprType>> = ArrayList()
     internal var callback: FunctionCallback = { _, _ -> StringLiteral("") }

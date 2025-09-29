@@ -42,7 +42,9 @@ class LocalizationFileTest {
     @Test
     fun `Parse complex file`() {
         val file = LocalizationFile.parse($$"""
+            # Some line comments
             -my-term = TESTING
+            ## With different significance
             message-number-one = {-my-term} Karma Krafts
             message-number-two = {-my-term} TESTING
             message-number-three = It's a { $test ->
@@ -57,8 +59,7 @@ class LocalizationFileTest {
         assertEquals(3, file.messages.size)
         assertEquals("""It's a 🐺${'\n'} wolp! Pure Kotlin Fluent implementation!!""", file.getMessage("message-number-three") {
             variable("test", "wolp")
-            function {
-                name = "DEXCL"
+            function("DEXCL") {
                 parameter("name", ExprType.STRING)
                 parameter("index", ExprType.NUMBER)
                 action { ctx, args ->
