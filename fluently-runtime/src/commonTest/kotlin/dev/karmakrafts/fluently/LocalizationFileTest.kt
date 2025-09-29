@@ -54,13 +54,13 @@ class LocalizationFileTest {
                 {" "}wolp
                 *[turtle] 🐢
                 {" "}turt
-            }! {DEXCL(name: "Pure Kotlin Fluent implementation")}
+            }! {DEXCL(name: "Pure Kotlin Fluent implementation", 1)}
         """.trimIndent())
         assertEquals(4, file.entries.size)
         assertEquals("""It's a 🐺${'\n'} wolp! Pure Kotlin Fluent implementation!!""", file.getMessage("message-number-three") {
             variables["test"] = StringLiteral("wolp")
             functions["DEXCL"] = Function("DEXCL", ExprType.STRING,
-                listOf("name" to ExprType.STRING)) { ctx, args ->
+                listOf("name" to ExprType.STRING, "index" to ExprType.NUMBER)) { ctx, args ->
                 val name = args.values.first().evaluate(ctx)
                 StringLiteral("$name!!")
             }

@@ -40,7 +40,7 @@ data class CallExpr( // @formatter:off
                 val (_, paramType) = parameter
                 check(valueType == paramType) { "Expected argument of type $paramType for '$name' but got $valueType" }
                 arguments[name] = value
-                currentArgIndex = parameters.indexOf(parameter)
+                currentArgIndex = parameters.indexOf(parameter) + 1
                 continue
             }
             val (paramName, paramType) = parameters.getOrNull(currentArgIndex)

@@ -68,7 +68,7 @@ ASTERISK: '*';
 DOLLAR: '$';
 QUOTE: '"' -> pushMode(M_STRING);
 EQ: '=' -> pushMode(M_VALUE); // After any equals, we enter value mode
-NUMBER: [0-9]+ (DOT [0-9]+);
+NUMBER: [0-9]+ (DOT [0-9]+)?;
 IDENT: [a-zA-Z] [a-zA-Z0-9_-]*;
 
 ERROR: .; // Everything else in default mode is considered an error
