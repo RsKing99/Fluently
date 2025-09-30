@@ -16,7 +16,7 @@
 
 package dev.karmakrafts.fluently.expr
 
-import dev.karmakrafts.fluently.EvaluationContext
+import dev.karmakrafts.fluently.eval.EvaluationContext
 
 data class Reference(val referenceType: Type, val name: String, val attributeName: String?) : Expr {
     enum class Type { MESSAGE, ATTRIBUTE, VARIABLE }

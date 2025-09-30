@@ -16,7 +16,7 @@
 
 package dev.karmakrafts.fluently.element
 
-import dev.karmakrafts.fluently.EvaluationContext
+import dev.karmakrafts.fluently.eval.EvaluationContext
 
 data class Text(val value: String) : PatternElement {
     override fun evaluate(context: EvaluationContext): String = value

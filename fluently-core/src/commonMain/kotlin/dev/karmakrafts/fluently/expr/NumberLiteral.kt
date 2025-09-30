@@ -16,7 +16,7 @@
 
 package dev.karmakrafts.fluently.expr
 
-import dev.karmakrafts.fluently.EvaluationContext
+import dev.karmakrafts.fluently.eval.EvaluationContext
 
 data class NumberLiteral(val value: Number) : Expr {
     inline val isDouble: Boolean

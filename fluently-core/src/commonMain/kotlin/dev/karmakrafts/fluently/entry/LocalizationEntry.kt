@@ -16,11 +16,11 @@
 
 package dev.karmakrafts.fluently.entry
 
-import dev.karmakrafts.fluently.Attribute
-import dev.karmakrafts.fluently.Evaluable
-import dev.karmakrafts.fluently.EvaluationContext
-import dev.karmakrafts.fluently.Named
+import dev.karmakrafts.fluently.element.Attribute
 import dev.karmakrafts.fluently.element.PatternElement
+import dev.karmakrafts.fluently.eval.Evaluable
+import dev.karmakrafts.fluently.eval.EvaluationContext
+import dev.karmakrafts.fluently.util.Named
 
 sealed interface LocalizationEntry : Evaluable, Named {
     override val name: String

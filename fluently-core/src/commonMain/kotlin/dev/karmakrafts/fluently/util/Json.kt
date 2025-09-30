@@ -14,11 +14,18 @@
  * limitations under the License.
  */
 
-package dev.karmakrafts.fluently.expr
+package dev.karmakrafts.fluently.util
 
-import dev.karmakrafts.fluently.eval.EvaluationContext
+import dev.karmakrafts.fluently.bundle.defaultValueSerializer
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.json.Json
 
-data class StringLiteral(val value: String) : Expr {
-    override fun getType(context: EvaluationContext): ExprType = ExprType.STRING
-    override fun evaluate(context: EvaluationContext): String = value
+@OptIn(ExperimentalSerializationApi::class)
+internal val json: Json = Json {
+    ignoreUnknownKeys = true
+    prettyPrint = true
+    prettyPrintIndent = "\t"
+    serializersModule = defaultValueSerializer
+    allowComments = true
+    allowTrailingComma = true
 }

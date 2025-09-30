@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package dev.karmakrafts.fluently
+package dev.karmakrafts.fluently.eval
 
+import dev.karmakrafts.fluently.LocalizationFile
 import dev.karmakrafts.fluently.expr.Expr
 import dev.karmakrafts.fluently.expr.NumberLiteral
 import dev.karmakrafts.fluently.expr.StringLiteral

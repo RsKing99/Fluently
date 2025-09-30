@@ -14,15 +14,16 @@
  * limitations under the License.
  */
 
-package dev.karmakrafts.fluently
+package dev.karmakrafts.fluently.eval
 
-interface Evaluable {
-    fun evaluate(context: EvaluationContext): String
-}
+import dev.karmakrafts.fluently.expr.Expr
+import dev.karmakrafts.fluently.expr.ExprType
 
-inline fun Evaluable.evaluate( // @formatter:off
-    file: LocalizationFile,
-    contextInit: EvaluationContextBuilder.() -> Unit = {}
-): String { // @formatter:on
-    return evaluate(EvaluationContextBuilder().apply(contextInit).build(file))
-}
+typealias FunctionCallback = (ctx: EvaluationContext, args: Map<String, Expr>) -> Expr
+
+data class Function(
+    val name: String,
+    val returnType: ExprType,
+    val parameters: List<Pair<String, ExprType>>,
+    val callback: FunctionCallback
+)

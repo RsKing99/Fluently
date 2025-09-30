@@ -14,16 +14,21 @@
  * limitations under the License.
  */
 
-package dev.karmakrafts.fluently
+package dev.karmakrafts.fluently.element
 
-import dev.karmakrafts.fluently.expr.Expr
-import dev.karmakrafts.fluently.expr.ExprType
+import dev.karmakrafts.fluently.eval.Evaluable
+import dev.karmakrafts.fluently.eval.EvaluationContext
+import dev.karmakrafts.fluently.util.Named
 
-typealias FunctionCallback = (ctx: EvaluationContext, args: Map<String, Expr>) -> Expr
-
-data class Function(
-    val name: String,
-    val returnType: ExprType,
-    val parameters: List<Pair<String, ExprType>>,
-    val callback: FunctionCallback
-)
+data class Attribute( // @formatter:off
+    val entryName: String,
+    override val name: String,
+    val elements: List<PatternElement>
+) : Evaluable, Named { // @formatter:on
+    override fun evaluate(context: EvaluationContext): String {
+        context.pushParent(this)
+        val result = elements.joinToString("") { element -> element.evaluate(context) }
+        context.popParent()
+        return result
+    }
+}

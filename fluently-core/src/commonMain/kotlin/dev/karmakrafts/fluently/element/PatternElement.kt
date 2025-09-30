@@ -16,6 +16,6 @@
 
 package dev.karmakrafts.fluently.element
 
-import dev.karmakrafts.fluently.Evaluable
+import dev.karmakrafts.fluently.eval.Evaluable
 
 interface PatternElement : Evaluable

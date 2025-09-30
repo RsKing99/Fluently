@@ -16,7 +16,11 @@
 
 package dev.karmakrafts.fluently
 
+import dev.karmakrafts.fluently.element.Attribute
 import dev.karmakrafts.fluently.entry.Message
+import dev.karmakrafts.fluently.eval.EvaluationContext
+import dev.karmakrafts.fluently.eval.EvaluationContextBuilder
+import dev.karmakrafts.fluently.eval.evaluate
 import dev.karmakrafts.fluently.frontend.FluentLexer
 import dev.karmakrafts.fluently.frontend.FluentParser
 import dev.karmakrafts.fluently.parser.ParserContext
@@ -33,6 +37,8 @@ data class LocalizationFile private constructor( // @formatter:off
     val globalContextInit: EvaluationContextBuilder.() -> Unit
 ) { // @formatter:on
     companion object {
+        fun empty(): LocalizationFile = LocalizationFile(globalContextInit = {})
+
         fun fromMessages( // @formatter:off
             messages: Map<String, Message>,
             globalContextInit: EvaluationContextBuilder.() -> Unit = {}
@@ -54,10 +60,7 @@ data class LocalizationFile private constructor( // @formatter:off
             val file = LocalizationFile(globalContextInit = globalContextInit)
             val terms = fileNode.accept(TermParser(file))
             val context = ParserContext(file, terms, true)
-            // @formatter:off
-            file.messages += fileNode.accept(context.messageParser)
-                .associateBy { message -> message.name }
-            // @formatter:on
+            file.messages += fileNode.accept(context.messageParser).associateBy { message -> message.name }
             return file
         }
 

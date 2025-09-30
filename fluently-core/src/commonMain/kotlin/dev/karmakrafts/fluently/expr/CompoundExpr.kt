@@ -16,8 +16,8 @@
 
 package dev.karmakrafts.fluently.expr
 
-import dev.karmakrafts.fluently.EvaluationContext
 import dev.karmakrafts.fluently.element.PatternElement
+import dev.karmakrafts.fluently.eval.EvaluationContext
 
 data class CompoundExpr(val elements: List<PatternElement>) : Expr {
     override fun getType(context: EvaluationContext): ExprType {

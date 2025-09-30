@@ -14,8 +14,17 @@
  * limitations under the License.
  */
 
-package dev.karmakrafts.fluently
+package dev.karmakrafts.fluently.eval
 
-interface Named {
-    val name: String
+import dev.karmakrafts.fluently.LocalizationFile
+
+interface Evaluable {
+    fun evaluate(context: EvaluationContext): String
+}
+
+inline fun Evaluable.evaluate( // @formatter:off
+    file: LocalizationFile,
+    contextInit: EvaluationContextBuilder.() -> Unit = {}
+): String { // @formatter:on
+    return evaluate(EvaluationContextBuilder().apply(contextInit).build(file))
 }

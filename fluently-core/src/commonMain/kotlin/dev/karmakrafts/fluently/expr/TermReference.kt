@@ -16,7 +16,7 @@
 
 package dev.karmakrafts.fluently.expr
 
-import dev.karmakrafts.fluently.EvaluationContext
+import dev.karmakrafts.fluently.eval.EvaluationContext
 
 data class TermReference(val entryName: String, val attribName: String?, val arguments: Map<String, Expr>) : Expr {
     inline val isParametrized: Boolean

@@ -16,8 +16,8 @@
 
 package dev.karmakrafts.fluently.expr
 
-import dev.karmakrafts.fluently.EvaluationContext
 import dev.karmakrafts.fluently.element.PatternElement
+import dev.karmakrafts.fluently.eval.EvaluationContext
 
 data class SelectExpr(val variable: Expr, val variants: Map<Expr, Variant>) : Expr {
     data class Variant(val key: Expr, val elements: List<PatternElement>, val isDefault: Boolean = false)

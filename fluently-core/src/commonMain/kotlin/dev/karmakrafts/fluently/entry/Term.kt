@@ -16,9 +16,9 @@
 
 package dev.karmakrafts.fluently.entry
 
-import dev.karmakrafts.fluently.Attribute
-import dev.karmakrafts.fluently.EvaluationContext
+import dev.karmakrafts.fluently.element.Attribute
 import dev.karmakrafts.fluently.element.PatternElement
+import dev.karmakrafts.fluently.eval.EvaluationContext
 
 data class Term(
     override val name: String,

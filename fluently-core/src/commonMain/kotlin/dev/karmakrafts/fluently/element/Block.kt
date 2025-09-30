@@ -16,7 +16,7 @@
 
 package dev.karmakrafts.fluently.element
 
-import dev.karmakrafts.fluently.EvaluationContext
+import dev.karmakrafts.fluently.eval.EvaluationContext
 
 data class Block(
     val element: PatternElement

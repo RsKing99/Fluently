@@ -14,19 +14,8 @@
  * limitations under the License.
  */
 
-package dev.karmakrafts.fluently
+package dev.karmakrafts.fluently.util
 
-import dev.karmakrafts.fluently.element.PatternElement
-
-data class Attribute( // @formatter:off
-    val entryName: String,
-    override val name: String,
-    val elements: List<PatternElement>
-) : Evaluable, Named { // @formatter:on
-    override fun evaluate(context: EvaluationContext): String {
-        context.pushParent(this)
-        val result = elements.joinToString("") { element -> element.evaluate(context) }
-        context.popParent()
-        return result
-    }
+interface Named {
+    val name: String
 }

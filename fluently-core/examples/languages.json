@@ -1,0 +1,30 @@
+{
+    // Fluently bundle config version 1 is currently being used, might be used for migrations later
+    "version": 1,
+    // Entries represent all available locales in a bundle and can be queried programmatically
+    "entries": {
+        "en_us": {
+            // Display name for showing in UIs so we don't have to load the entire localization file
+            "display_name": "English (US)",
+            // Path to the Fluent file relative to the bundle JSON
+            "path": "en_us.ftl",
+            // Default values exported as global Fluent variables
+            "defaults": {
+                "lang_name": {
+                    "type": "string",
+                    "value": "English (US)"
+                }
+            }
+        },
+        "de_de": {
+            "display_name": "Deutsch",
+            "path": "de_de.ftl",
+            "defaults": {
+                "lang_name": {
+                    "type": "string",
+                    "value": "Deutsch"
+                }
+            }
+        }
+    }
+}

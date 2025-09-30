@@ -16,8 +16,8 @@
 
 package dev.karmakrafts.fluently.parser
 
-import dev.karmakrafts.fluently.Attribute
 import dev.karmakrafts.fluently.LocalizationFile
+import dev.karmakrafts.fluently.element.Attribute
 import dev.karmakrafts.fluently.entry.Term
 import dev.karmakrafts.fluently.frontend.FluentParser
 import dev.karmakrafts.fluently.frontend.FluentParserBaseVisitor

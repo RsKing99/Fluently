@@ -16,7 +16,7 @@
 
 package dev.karmakrafts.fluently.expr
 
-import dev.karmakrafts.fluently.EvaluationContext
+import dev.karmakrafts.fluently.eval.EvaluationContext
 
 data class FunctionReference(val name: String, val arguments: List<Pair<String?, Expr>>) : Expr {
     override fun getType(context: EvaluationContext): ExprType {

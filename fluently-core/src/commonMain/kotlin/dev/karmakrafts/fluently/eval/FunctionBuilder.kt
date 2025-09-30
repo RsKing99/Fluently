@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package dev.karmakrafts.fluently
+package dev.karmakrafts.fluently.eval
 
 import dev.karmakrafts.fluently.expr.ExprType
 import dev.karmakrafts.fluently.expr.StringLiteral

@@ -16,8 +16,8 @@
 
 package dev.karmakrafts.fluently.expr
 
-import dev.karmakrafts.fluently.EvaluationContext
 import dev.karmakrafts.fluently.element.PatternElement
+import dev.karmakrafts.fluently.eval.EvaluationContext
 
 interface Expr : PatternElement {
     fun getType(context: EvaluationContext): ExprType
