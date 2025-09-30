@@ -19,9 +19,20 @@ package dev.karmakrafts.fluently.expr
 import dev.karmakrafts.fluently.element.PatternElement
 import dev.karmakrafts.fluently.eval.EvaluationContext
 
+/**
+ * A selection expression that chooses among variants based on the value of [variable].
+ *
+ * Each entry in [variants] maps a selector key expression to a [Variant]. One of the variants must
+ * be marked as default and is used when no key matches. The overall type is always [ExprType.STRING].
+ *
+ * @property variable The selector expression whose string value is compared to variant keys.
+ * @property variants The mapping from key expressions to their corresponding [Variant].
+ */
 data class SelectExpr(val variable: Expr, val variants: Map<Expr, Variant>) : Expr {
+    /** Describes a single selectable variant. */
     data class Variant(val key: Expr, val elements: List<PatternElement>, val isDefault: Boolean = false)
 
+    /** Returns the variant marked as default. */
     inline val defaultVariant: Variant
         get() = variants.values.first { variant -> variant.isDefault }
 

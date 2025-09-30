@@ -18,7 +18,13 @@ package dev.karmakrafts.fluently.expr
 
 import dev.karmakrafts.fluently.eval.EvaluationContext
 
+/**
+ * A numeric literal expression.
+ *
+ * @property value The numeric value as parsed; may be an integer or floating-point number.
+ */
 data class NumberLiteral(val value: Number) : Expr {
+    /** True if [value] is a floating-point number. */
     inline val isDouble: Boolean
         get() = value is Double
 

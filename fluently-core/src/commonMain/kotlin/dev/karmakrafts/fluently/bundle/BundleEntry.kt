@@ -21,20 +21,36 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
+/**
+ * Describes a single locale entry within a [LocalizationBundle].
+ *
+ * Each bundle entry identifies a localized resource file by its [path], provides a human-readable
+ * [displayName] for UI, and may declare [defaults] to seed the evaluation context with variables
+ * (for example, brand name or feature flags) whenever this locale is loaded.
+ *
+ * Instances are typically created via JSON deserialization of a localization bundle file.
+ *
+ * @property locale BCP‑47 language tag (for example, "en-US") that keys this entry in the bundle.
+ * @property displayName A friendly name for the locale suitable for display in UI.
+ * @property path Relative or absolute path to the Fluent resource file for this locale.
+ * @property defaults A map of variable name to default value injected into the evaluation context when loading.
+ */
 data class BundleEntry(
     val locale: String,
     @SerialName("display_name") val displayName: String,
     val path: String,
     val defaults: Map<String, DefaultValue> = emptyMap()
 ) {
+    /**
+     * Applies all [defaults] to the receiver [EvaluationContextBuilder].
+     *
+     * This is intended to be called while constructing the evaluation context for a localization file
+     * (see [LocalizationBundle.loadLocale]). Each default value calls through to its specific
+     * implementation to register the appropriate variable type.
+     */
     context(builder: EvaluationContextBuilder) fun applyDefaults() {
         builder.apply {
-            for ((name, value) in defaults) when (value) {
-                is DefaultValue.StringValue -> variable(name, value.value)
-                is DefaultValue.LongValue -> variable(name, value.value)
-                is DefaultValue.DoubleValue -> variable(name, value.value)
-                is DefaultValue.BoolValue -> variable(name, value.value)
-            }
+            for ((name, value) in defaults) value.applyToContext(name)
         }
     }
 }

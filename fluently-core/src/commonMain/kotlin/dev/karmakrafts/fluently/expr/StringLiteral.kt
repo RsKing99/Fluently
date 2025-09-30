@@ -18,6 +18,7 @@ package dev.karmakrafts.fluently.expr
 
 import dev.karmakrafts.fluently.eval.EvaluationContext
 
+/** A string literal expression. */
 data class StringLiteral(val value: String) : Expr {
     override fun getType(context: EvaluationContext): ExprType = ExprType.STRING
     override fun evaluate(context: EvaluationContext): String = value

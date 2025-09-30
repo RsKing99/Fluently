@@ -19,19 +19,29 @@ package dev.karmakrafts.fluently.eval
 import dev.karmakrafts.fluently.expr.ExprType
 import dev.karmakrafts.fluently.expr.StringLiteral
 
+/**
+ * DSL builder for declaring a [Function].
+ *
+ * Instances are created by [EvaluationContextBuilder.function] and configured by setting [returnType],
+ * adding [parameter]s, and providing an [action] (the callback body).
+ */
 class FunctionBuilder @PublishedApi internal constructor(private val name: String) {
+    /** The function's static return type. Defaults to [ExprType.STRING]. */
     var returnType: ExprType = ExprType.STRING
     private val parameters: ArrayList<Pair<String, ExprType>> = ArrayList()
     internal var callback: FunctionCallback = { _, _ -> StringLiteral("") }
 
+    /** Adds a parameter with [name] and expected [type]. */
     fun parameter(name: String, type: ExprType) {
         parameters += name to type
     }
 
+    /** Sets the function implementation [callback]. */
     fun action(callback: FunctionCallback) {
         this.callback = callback
     }
 
+    /** Builds the immutable [Function] instance. */
     @PublishedApi
     internal fun build(): Function = Function( // @formatter:off
         name = name,

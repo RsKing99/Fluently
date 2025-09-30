@@ -16,6 +16,7 @@
 
 package dev.karmakrafts.fluently.bundle
 
+import dev.karmakrafts.fluently.eval.EvaluationContextBuilder
 import kotlinx.serialization.Polymorphic
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -23,26 +24,65 @@ import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic
 import kotlinx.serialization.modules.subclass
 
+/**
+ * A polymorphic default value that can seed an [EvaluationContextBuilder] with a variable.
+ *
+ * Implementations correspond to primitive types supported by the evaluation context. These values are
+ * typically declared in a [BundleEntry] and applied when a [LocalizationBundle] loads a locale, so that
+ * messages can rely on predefined variables.
+ */
 @Polymorphic
 @Serializable
 sealed interface DefaultValue {
+    /** A string default value injected under a given variable name. */
     @SerialName("string")
     @Serializable
-    data class StringValue(val value: String) : DefaultValue
+    data class StringValue(val value: String) : DefaultValue {
+        /** Registers this string [value] as a variable with the provided [name]. */
+        context(builder: EvaluationContextBuilder) override fun applyToContext(name: String) {
+            builder.variable(name, value)
+        }
+    }
 
+    /** A long (integral) default value injected under a given variable name. */
     @SerialName("long")
     @Serializable
-    data class LongValue(val value: Long) : DefaultValue
+    data class LongValue(val value: Long) : DefaultValue {
+        /** Registers this long [value] as a variable with the provided [name]. */
+        context(builder: EvaluationContextBuilder) override fun applyToContext(name: String) {
+            builder.variable(name, value)
+        }
+    }
 
+    /** A double (floating‑point) default value injected under a given variable name. */
     @SerialName("double")
     @Serializable
-    data class DoubleValue(val value: Double) : DefaultValue
+    data class DoubleValue(val value: Double) : DefaultValue {
+        /** Registers this double [value] as a variable with the provided [name]. */
+        context(builder: EvaluationContextBuilder) override fun applyToContext(name: String) {
+            builder.variable(name, value)
+        }
+    }
 
+    /** A boolean default value injected under a given variable name. */
     @SerialName("bool")
     @Serializable
-    data class BoolValue(val value: Boolean) : DefaultValue
+    data class BoolValue(val value: Boolean) : DefaultValue {
+        /** Registers this boolean [value] as a variable with the provided [name]. */
+        context(builder: EvaluationContextBuilder) override fun applyToContext(name: String) {
+            builder.variable(name, value)
+        }
+    }
+
+    /**
+     * Applies this default value to the receiver [EvaluationContextBuilder] under the provided [name].
+     *
+     * Implementations map to the appropriate [EvaluationContextBuilder.variable] overloads.
+     */
+    context(builder: EvaluationContextBuilder) fun applyToContext(name: String)
 }
 
+/** Serializer module registering all [DefaultValue] implementations for polymorphic JSON. */
 internal val defaultValueSerializer: SerializersModule = SerializersModule {
     polymorphic(DefaultValue::class) {
         subclass(DefaultValue.StringValue::class)

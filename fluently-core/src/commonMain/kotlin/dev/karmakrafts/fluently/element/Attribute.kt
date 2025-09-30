@@ -20,11 +20,26 @@ import dev.karmakrafts.fluently.eval.Evaluable
 import dev.karmakrafts.fluently.eval.EvaluationContext
 import dev.karmakrafts.fluently.util.Named
 
+/**
+ * A named attribute belonging to a message or term.
+ *
+ * Attributes behave like mini-patterns attached to an entry and can be referenced separately
+ * (for example, brand-name.title). They evaluate by concatenating their [elements]. During
+ * evaluation, the attribute participates in cycle detection through the evaluation context's
+ * parent stack.
+ *
+ * @property entryName The name of the owning entry (message or term).
+ * @property name The attribute identifier as referenced in source and APIs.
+ * @property elements Ordered pattern elements that compose the attribute's value.
+ */
 data class Attribute( // @formatter:off
     val entryName: String,
     override val name: String,
     val elements: List<PatternElement>
 ) : Evaluable, Named { // @formatter:on
+    /**
+     * Evaluates this attribute under [context] with cycle-detection bookkeeping.
+     */
     override fun evaluate(context: EvaluationContext): String {
         context.pushParent(this)
         val result = elements.joinToString("") { element -> element.evaluate(context) }

@@ -18,6 +18,14 @@ package dev.karmakrafts.fluently.element
 
 import dev.karmakrafts.fluently.eval.EvaluationContext
 
+/**
+ * A block element that inserts a newline before the contained [element].
+ *
+ * This represents a continuation line in Fluent patterns. During evaluation the inner element is
+ * evaluated and its value is prefixed with a single newline character.
+ *
+ * @property element The nested pattern element to render after the newline.
+ */
 data class Block(
     val element: PatternElement
 ) : PatternElement {

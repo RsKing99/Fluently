@@ -16,6 +16,17 @@
 
 package dev.karmakrafts.fluently.expr
 
+/**
+ * The static type of a Fluent expression.
+ *
+ * Types are coarse-grained because Fluent formats everything to strings eventually, but knowing
+ * whether an expression is numeric can influence function overloading, validation, or selection
+ * logic during parsing and evaluation.
+ */
 enum class ExprType {
-    STRING, NUMBER
+    /** A string value resulting from formatting or concatenation. */
+    STRING,
+
+    /** A numeric value (integer or floating-point) usable by numeric functions. */
+    NUMBER
 }

@@ -16,6 +16,19 @@
 
 package dev.karmakrafts.fluently.util
 
+/**
+ * Minimal contract for elements that carry a user-facing identifier.
+ *
+ * This interface is implemented by entries and attributes so their names can be
+ * surfaced in error messages and used for cycle detection during evaluation.
+ */
 interface Named {
+    /**
+     * The identifier of this element.
+     *
+     * For messages and terms the value does not include the leading dash used by
+     * term identifiers in Fluent source; for attributes it is only the attribute
+     * name and does not include the owning entry prefix.
+     */
     val name: String
 }

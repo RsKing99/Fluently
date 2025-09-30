@@ -21,7 +21,7 @@ import dev.karmakrafts.fluently.entry.Message
 import dev.karmakrafts.fluently.frontend.FluentParser
 import dev.karmakrafts.fluently.frontend.FluentParserBaseVisitor
 
-class MessageParser(
+internal class MessageParser(
     val context: ParserContext
 ) : FluentParserBaseVisitor<List<Message>>() {
     override fun defaultResult(): List<Message> = ArrayList()

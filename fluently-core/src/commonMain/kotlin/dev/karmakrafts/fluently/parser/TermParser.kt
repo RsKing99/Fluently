@@ -22,7 +22,7 @@ import dev.karmakrafts.fluently.entry.Term
 import dev.karmakrafts.fluently.frontend.FluentParser
 import dev.karmakrafts.fluently.frontend.FluentParserBaseVisitor
 
-class TermParser(
+internal class TermParser(
     file: LocalizationFile
 ) : FluentParserBaseVisitor<Map<String, Term>>() {
     private val parserContext: ParserContext = ParserContext(file, emptyMap(), false)

@@ -18,6 +18,20 @@ package dev.karmakrafts.fluently.expr
 
 import dev.karmakrafts.fluently.eval.EvaluationContext
 
+/**
+ * Reference to a built-in or user-defined function call in an expression.
+ *
+ * Functions are resolved from [EvaluationContext.functions] by [name]. Positional and named arguments
+ * are supported. Each argument is represented as a pair where the first component is an optional
+ * parameter name and the second is the value expression.
+ *
+ * During evaluation, arguments are matched to the function's declared parameters in order, with
+ * named arguments taking precedence and setting the current positional index accordingly. Argument
+ * types are validated against the function signature using [Expr.getType].
+ *
+ * @property name The function identifier to invoke.
+ * @property arguments The ordered list of call arguments; each pair is (parameterName?, valueExpr).
+ */
 data class FunctionReference(val name: String, val arguments: List<Pair<String?, Expr>>) : Expr {
     override fun getType(context: EvaluationContext): ExprType {
         val function = context.functions[name] ?: error("No function named '$name'")

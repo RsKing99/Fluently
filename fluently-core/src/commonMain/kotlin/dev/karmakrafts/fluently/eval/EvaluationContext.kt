@@ -21,12 +21,27 @@ import dev.karmakrafts.fluently.element.Attribute
 import dev.karmakrafts.fluently.expr.Expr
 import dev.karmakrafts.fluently.util.Named
 
+/**
+ * Immutable context object used during evaluation and type checking.
+ *
+ * It provides access to the current [file] being formatted, registered [functions], and
+ * runtime [variables]. It also carries a [parentStack] used for cycle detection when entries
+ * reference each other.
+ *
+ * Instances are typically created via [EvaluationContextBuilder].
+ *
+ * @property file The localization file containing messages and terms to resolve references.
+ * @property functions The set of available functions indexed by name.
+ * @property variables Variables available to expressions (strings or numbers), indexed by name.
+ * @property parentStack Internal stack of currently-evaluating parents used for cycle detection.
+ */
 data class EvaluationContext(
     val file: LocalizationFile,
     val functions: Map<String, Function>,
     val variables: Map<String, Expr>,
     val parentStack: ArrayDeque<Named> = ArrayDeque() // Used for multi-level cycle detection
 ) {
+    /** Returns a string representing the cycle path when a self-reference is detected. */
     fun getParentCycle(): String = (parentStack.toList() + parentStack.first()) //
         .joinToString(" -> ") { element ->
             when (element) {
@@ -35,12 +50,15 @@ data class EvaluationContext(
             }
         }
 
+    /** True if [element] is currently present in [parentStack]. */
     fun hasVisitedParent(element: Named): Boolean = element in parentStack
 
+    /** Pushes a new parent element onto the cycle-detection stack. */
     fun pushParent(element: Named) {
         parentStack.addFirst(element)
     }
 
+    /** Pops the most recent parent element from the cycle-detection stack. */
     fun popParent() {
         parentStack.removeFirst()
     }

@@ -20,6 +20,19 @@ import dev.karmakrafts.fluently.element.Attribute
 import dev.karmakrafts.fluently.element.PatternElement
 import dev.karmakrafts.fluently.eval.EvaluationContext
 
+/**
+ * A private reusable Fluent term entry (identifier starts with a dash in source).
+ *
+ * Terms are intended to be referenced from within messages (optionally with parameters) but are not
+ * formatted directly. They may define [attributes] and contain pattern [elements], similar to messages.
+ *
+ * Attempting to evaluate a term directly will fail; terms should be resolved and formatted through the
+ * referencing message or a lowered expression.
+ *
+ * @property name Unique identifier of this term (without the leading dash).
+ * @property elements Ordered pattern elements that compose the term's value.
+ * @property attributes Named attributes available on this term; empty if none.
+ */
 data class Term(
     override val name: String,
     override val elements: List<PatternElement>,

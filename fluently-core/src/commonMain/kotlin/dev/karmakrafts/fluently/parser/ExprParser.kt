@@ -33,7 +33,7 @@ import dev.karmakrafts.fluently.frontend.FluentParser
 import dev.karmakrafts.fluently.frontend.FluentParserBaseVisitor
 import org.antlr.v4.kotlinruntime.tree.TerminalNode
 
-class ExprParser(
+internal class ExprParser(
     val context: ParserContext
 ) : FluentParserBaseVisitor<List<Expr>>() {
     override fun defaultResult(): List<Expr> = ArrayList()

@@ -21,6 +21,12 @@ import dev.karmakrafts.fluently.expr.Expr
 import dev.karmakrafts.fluently.expr.NumberLiteral
 import dev.karmakrafts.fluently.expr.StringLiteral
 
+/**
+ * Builder DSL for constructing an [EvaluationContext].
+ *
+ * Use [variable] helpers to declare runtime variables and [function] to register Fluent functions
+ * before calling the internal [build] method via the extension [Evaluable.evaluate].
+ */
 class EvaluationContextBuilder @PublishedApi internal constructor() {
     @PublishedApi
     internal val functions: HashMap<String, Function> = HashMap()
@@ -28,26 +34,37 @@ class EvaluationContextBuilder @PublishedApi internal constructor() {
     @PublishedApi
     internal val variables: HashMap<String, Expr> = HashMap()
 
+    /** Adds an enum [value] as a lowercase string variable under [name]. */
     fun variable(name: String, value: Enum<*>) {
         variables[name] = StringLiteral(value.name.lowercase())
     }
 
+    /** Adds a string [value] variable under [name]. */
     fun variable(name: String, value: String) {
         variables[name] = StringLiteral(value)
     }
 
+    /** Adds a boolean [value] variable under [name] (stored as a string). */
     fun variable(name: String, value: Boolean) {
         variables[name] = StringLiteral(value.toString())
     }
 
+    /** Adds a numeric [value] variable under [name]. */
     fun variable(name: String, value: Number) {
         variables[name] = NumberLiteral(value)
     }
 
+    /** Registers a function named [name] using a [FunctionBuilder] DSL. */
     inline fun function(name: String, block: FunctionBuilder.() -> Unit) {
         functions[name] = FunctionBuilder(name).apply(block).build()
     }
 
+    /**
+     * Builds an [EvaluationContext] for the provided [file].
+     *
+     * Normally not called directly; prefer [Evaluable.evaluate]. Marked [PublishedApi] to make it
+     * accessible to inline call sites while keeping the constructor internal.
+     */
     @PublishedApi
     internal fun build(file: LocalizationFile): EvaluationContext = EvaluationContext( // @formatter:off
         file = file,

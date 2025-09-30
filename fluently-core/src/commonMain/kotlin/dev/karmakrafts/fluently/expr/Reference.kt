@@ -18,7 +18,19 @@ package dev.karmakrafts.fluently.expr
 
 import dev.karmakrafts.fluently.eval.EvaluationContext
 
+/**
+ * Reference to a message, attribute, or variable within the current bundle or context.
+ *
+ * The [referenceType] determines how [name] (and optionally [attributeName]) are interpreted.
+ * Message and attribute references are resolved from the [EvaluationContext.file], while variable
+ * references are taken from [EvaluationContext.variables].
+ *
+ * @property referenceType The kind of target being referenced.
+ * @property name The identifier of the message/term or variable being referenced.
+ * @property attributeName The attribute name when [referenceType] is [Type.ATTRIBUTE]; otherwise `null`.
+ */
 data class Reference(val referenceType: Type, val name: String, val attributeName: String?) : Expr {
+    /** The supported kinds of references. */
     enum class Type { MESSAGE, ATTRIBUTE, VARIABLE }
 
     override fun getType(context: EvaluationContext): ExprType {

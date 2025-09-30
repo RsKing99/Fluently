@@ -16,6 +16,8 @@
 
 package dev.karmakrafts.fluently
 
+import dev.karmakrafts.fluently.LocalizationFile.Companion.fromMessages
+import dev.karmakrafts.fluently.LocalizationFile.Companion.parse
 import dev.karmakrafts.fluently.element.Attribute
 import dev.karmakrafts.fluently.entry.Message
 import dev.karmakrafts.fluently.eval.EvaluationContext
@@ -31,14 +33,39 @@ import org.antlr.v4.kotlinruntime.CharStreams
 import org.antlr.v4.kotlinruntime.CommonTokenStream
 import org.intellij.lang.annotations.Language
 
+/**
+ * In-memory representation of a parsed Fluent localization resource.
+ *
+ * A localization file holds all public message entries parsed from a Fluent source and provides
+ * helpers to format messages and their attributes. Instances are typically created via one of the
+ * [parse] overloads or [fromMessages] for programmatic construction. A shared
+ * [globalContextInit] lambda can be supplied to seed the evaluation context with variables and
+ * functions for every formatting call made through this file.
+ *
+ * This type is immutable from the API perspective; while [messages] is a mutable map internally,
+ * it is only mutated during parsing/initialization and then accessed read-only through the API.
+ *
+ * @property messages Parsed messages indexed by name.
+ * @property globalContextInit A lambda that initializes an [EvaluationContextBuilder] with common
+ * variables and functions applied to every formatting request.
+ */
 @ConsistentCopyVisibility
 data class LocalizationFile private constructor( // @formatter:off
     val messages: MutableMap<String, Message> = HashMap(),
     val globalContextInit: EvaluationContextBuilder.() -> Unit
 ) { // @formatter:on
     companion object {
+        /**
+         * Creates an empty localization file with no messages and no global context initialization.
+         */
         fun empty(): LocalizationFile = LocalizationFile(globalContextInit = {})
 
+        /**
+         * Constructs a localization file from an existing [messages] map.
+         *
+         * Use this when messages are produced programmatically (e.g., in tests). The optional
+         * [globalContextInit] seeds the evaluation context for all subsequent formatting calls.
+         */
         fun fromMessages( // @formatter:off
             messages: Map<String, Message>,
             globalContextInit: EvaluationContextBuilder.() -> Unit = {}
@@ -48,6 +75,15 @@ data class LocalizationFile private constructor( // @formatter:off
             return file
         }
 
+        /**
+         * Parses Fluent [source] text into a [LocalizationFile].
+         *
+         * This builds an ANTLR lexer and parser, collects terms for attribute resolution, and
+         * constructs the final messages map. The optional [globalContextInit] lambda is stored on the
+         * resulting [LocalizationFile] and will be composed into later formatting calls.
+         *
+         * @throws IllegalStateException if the Fluent input is syntactically invalid.
+         */
         fun parse( // @formatter:off
             @Language("fluent") source: String,
             globalContextInit: EvaluationContextBuilder.() -> Unit = {}
@@ -64,6 +100,9 @@ data class LocalizationFile private constructor( // @formatter:off
             return file
         }
 
+        /**
+         * Reads all UTF‑8 text from [source] and delegates to [parse] with a string input.
+         */
         fun parse( // @formatter:off
             source: Source,
             globalContextInit: EvaluationContextBuilder.() -> Unit = {}
@@ -72,10 +111,22 @@ data class LocalizationFile private constructor( // @formatter:off
         }
     }
 
+    /**
+     * Returns the message with the given [name], or null if it does not exist.
+     */
     operator fun get(name: String): Message? = messages[name]
+
+    /**
+     * Returns the attribute [attribName] belonging to the message [entryName], or null if missing.
+     */
     operator fun get(entryName: String, attribName: String): Attribute? =
         messages[entryName]?.attributes?.get(attribName)
 
+    /**
+     * Formats the message identified by [name] using a pre-built [context].
+     *
+     * Returns a placeholder string of the form `<missing:name>` if the message is not present.
+     */
     fun format( // @formatter:off
         name: String,
         context: EvaluationContext
@@ -83,6 +134,15 @@ data class LocalizationFile private constructor( // @formatter:off
         return this[name]?.evaluate(context) ?: "<missing:$name>"
     }
 
+    /**
+     * Formats the message [name] by building an [EvaluationContext] for this file.
+     *
+     * The [contextInit] lambda can customize variables or functions for this specific call.
+     * Values provided by [contextInit] are composed after [globalContextInit], so they can override
+     * defaults.
+     *
+     * Returns `<missing:name>` if the message is not defined.
+     */
     inline fun format( // @formatter:off
         name: String,
         crossinline contextInit: EvaluationContextBuilder.() -> Unit = {}
@@ -93,6 +153,11 @@ data class LocalizationFile private constructor( // @formatter:off
         } ?: "<missing:$name>"
     }
 
+    /**
+     * Formats the attribute [attribName] of message [entryName] using a pre-built [context].
+     *
+     * Returns `<missing:entry.attribute>` if the attribute or message is not present.
+     */
     fun formatAttribute( // @formatter:off
         entryName: String,
         attribName: String,
@@ -101,6 +166,13 @@ data class LocalizationFile private constructor( // @formatter:off
         return this[entryName, attribName]?.evaluate(context) ?: "<missing:$entryName.$attribName>"
     }
 
+    /**
+     * Formats the attribute [attribName] of message [entryName] by building an [EvaluationContext]
+     * for this file. The [contextInit] lambda can supply per-call variables and functions which are
+     * applied after [globalContextInit].
+     *
+     * Returns `<missing:entry.attribute>` if the attribute or message is not defined.
+     */
     inline fun formatAttribute( // @formatter:off
         entryName: String,
         attribName: String,

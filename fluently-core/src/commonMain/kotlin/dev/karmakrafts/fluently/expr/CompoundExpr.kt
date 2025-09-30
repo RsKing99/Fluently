@@ -19,6 +19,14 @@ package dev.karmakrafts.fluently.expr
 import dev.karmakrafts.fluently.element.PatternElement
 import dev.karmakrafts.fluently.eval.EvaluationContext
 
+/**
+ * Concatenation of multiple [PatternElement]s into a single string expression.
+ *
+ * This node represents the common case of a message pattern mixing text and inline expressions.
+ * Its type is always [ExprType.STRING].
+ *
+ * @property elements The ordered list of pattern elements to be concatenated.
+ */
 data class CompoundExpr(val elements: List<PatternElement>) : Expr {
     override fun getType(context: EvaluationContext): ExprType {
         return ExprType.STRING

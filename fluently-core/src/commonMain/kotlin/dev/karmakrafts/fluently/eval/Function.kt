@@ -19,8 +19,25 @@ package dev.karmakrafts.fluently.eval
 import dev.karmakrafts.fluently.expr.Expr
 import dev.karmakrafts.fluently.expr.ExprType
 
+/**
+ * Callback invoked to implement a Fluent function.
+ *
+ * It receives the current [EvaluationContext] and a map of evaluated argument expressions by
+ * parameter name, and must return an [Expr] whose value will be evaluated by the caller.
+ */
 typealias FunctionCallback = (ctx: EvaluationContext, args: Map<String, Expr>) -> Expr
 
+/**
+ * A callable function available to expressions during evaluation.
+ *
+ * Functions may validate argument types (see [parameters]) and declare a [returnType] which
+ * is used by type checking. The [callback] implements the function body.
+ *
+ * @property name The unique identifier of the function.
+ * @property returnType The static [ExprType] returned by this function.
+ * @property parameters Ordered parameter list as pairs of (name, type).
+ * @property callback The implementation invoked when the function is called.
+ */
 data class Function(
     val name: String,
     val returnType: ExprType,

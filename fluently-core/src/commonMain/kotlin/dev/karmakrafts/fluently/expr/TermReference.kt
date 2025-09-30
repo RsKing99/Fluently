@@ -18,7 +18,25 @@ package dev.karmakrafts.fluently.expr
 
 import dev.karmakrafts.fluently.eval.EvaluationContext
 
-data class TermReference(val entryName: String, val attribName: String?, val arguments: Map<String, Expr>) : Expr {
+/**
+ * Reference to a Fluent term in an expression tree.
+ *
+ * A term is a private reusable entry whose identifier starts with a dash in Fluent source (for example, `-brand-name`).
+ * This node may optionally address a specific attribute of the term and may carry named arguments.
+ *
+ * This is a high-level AST node produced by parsing; it must be lowered to a concrete, resolved expression before
+ * type inference or evaluation. Until then, [getType] and [evaluate] will throw an error.
+ *
+ * @property entryName The name of the target term (without the leading dash).
+ * @property attribName The name of the attribute addressed on the term, or `null` to reference the term's value.
+ * @property arguments Named arguments to pass to the term when it is formatted; empty if none.
+ */
+data class TermReference(
+    val entryName: String, val attribName: String?, val arguments: Map<String, Expr>
+) : Expr {
+    /**
+     * Indicates whether this reference supplies any arguments to the term.
+     */
     inline val isParametrized: Boolean
         get() = arguments.isNotEmpty()
 

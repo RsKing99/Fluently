@@ -19,7 +19,7 @@ package dev.karmakrafts.fluently.parser
 import dev.karmakrafts.fluently.LocalizationFile
 import dev.karmakrafts.fluently.entry.Term
 
-data class ParserContext( // @formatter:off
+internal data class ParserContext( // @formatter:off
     val file: LocalizationFile,
     val terms: Map<String, Term>,
     val expandTerms: Boolean = false

@@ -19,6 +19,23 @@ package dev.karmakrafts.fluently.expr
 import dev.karmakrafts.fluently.element.PatternElement
 import dev.karmakrafts.fluently.eval.EvaluationContext
 
+/**
+ * Base contract for all expression nodes in the Fluent AST.
+ *
+ * Implementations must be able to report their static [ExprType] within a given [EvaluationContext]
+ * and can be evaluated through [PatternElement.evaluate]. Some higher-level nodes produced by parsing
+ * may not be directly evaluable or typable until they are lowered (see [TermReference] for example).
+ */
 interface Expr : PatternElement {
+    /**
+     * Returns the static type of this expression under the provided [context].
+     *
+     * Implementations may consult functions, variables, or bundle metadata available in the context
+     * to determine their type. Some nodes that require lowering may throw if asked for a type too early.
+     *
+     * @param context The evaluation context providing access to functions, variables, and entries.
+     * @return The inferred or declared [ExprType] of this expression.
+     * @throws IllegalStateException If the expression cannot be typed prior to lowering.
+     */
     fun getType(context: EvaluationContext): ExprType
 }

@@ -22,7 +22,7 @@ import dev.karmakrafts.fluently.element.Text
 import dev.karmakrafts.fluently.frontend.FluentParser
 import dev.karmakrafts.fluently.frontend.FluentParserBaseVisitor
 
-class PatternElementParser(
+internal class PatternElementParser(
     val context: ParserContext
 ) : FluentParserBaseVisitor<List<PatternElement>>() {
     override fun defaultResult(): List<PatternElement> = ArrayList()
