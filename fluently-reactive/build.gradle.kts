@@ -20,7 +20,6 @@ import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
     alias(libs.plugins.android.library)
-    alias(libs.plugins.kotlin.serialization)
     signing
     `maven-publish`
 }
@@ -56,16 +55,15 @@ kotlin {
     sourceSets {
         commonMain {
             dependencies {
-                api(projects.fluentlyFrontend)
-                api(libs.kotlinx.serialization.core)
-                api(libs.kotlinx.serialization.json)
-                api(libs.kotlinx.io.core)
-                api(libs.annotations)
+                api(projects.fluentlyCore)
+                api(libs.kotlinx.coroutines.core)
             }
         }
         commonTest {
             dependencies {
                 implementation(libs.kotlin.test)
+                implementation(libs.kotlinx.coroutines.test)
+                implementation(libs.kotest.assertions)
             }
         }
     }

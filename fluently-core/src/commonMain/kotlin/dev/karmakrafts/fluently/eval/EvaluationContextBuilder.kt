@@ -72,3 +72,10 @@ class EvaluationContextBuilder @PublishedApi internal constructor() {
         variables = variables
     ) // @formatter:on
 }
+
+inline fun evaluationContext( // @formatter:off
+    file: LocalizationFile,
+    block: EvaluationContextBuilder.() -> Unit
+): EvaluationContext { // @formatter:on
+    return EvaluationContextBuilder().apply(block).build(file)
+}

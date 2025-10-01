@@ -67,7 +67,7 @@ class LocalizationFileTest {
 
         assertEquals(4, file.messages.size)
 
-        assertEquals("""Testing""", file.formatAttribute("message-number-three", "foo"))
+        assertEquals("""Testing""", file.format("message-number-three", "foo"))
         assertEquals("""fops""", file.format("animal-type") {
             variable("test", "wolf")
         })

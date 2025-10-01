@@ -19,6 +19,7 @@ stately = "2.1.0" # https://github.com/touchlab/Stately/releases
 kotlinPoet = "2.2.0" # https://github.com/square/kotlinpoet/releases
 antlrKotlin = "1.0.5" # https://search.maven.org/artifact/com.strumenta/antlr-kotlin-runtime
 annotations = "26.0.2-1" # https://github.com/JetBrains/java-annotations/releases
+kotest = "6.0.3"
 
 [libraries]
 
@@ -26,6 +27,7 @@ kotlin-compiler-embeddable = { module = "org.jetbrains.kotlin:kotlin-compiler-em
 kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinx-coroutines" }
+kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinx-coroutines" }
 kotlinx-io-core = { module = "org.jetbrains.kotlinx:kotlinx-io-core", version.ref = "kotlinx-io" }
 kotlinx-serialization-core = { module = "org.jetbrains.kotlinx:kotlinx-serialization-core", version.ref = "kotlinx-serialization" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
@@ -35,6 +37,7 @@ stately-concurrent-collections = { module = "co.touchlab:stately-concurrent-coll
 kotlinPoet = { module = "com.squareup:kotlinpoet", version.ref = "kotlinPoet" }
 antlrKotlin-runtime = { module = "com.strumenta:antlr-kotlin-runtime", version.ref = "antlrKotlin" }
 annotations = { module = "org.jetbrains:annotations", version.ref = "annotations" }
+kotest-assertions = { module = "io.kotest:kotest-assertions-core", version.ref = "kotest" }
 
 [plugins]
 

@@ -20,7 +20,6 @@ import dev.karmakrafts.fluently.eval.EvaluationContextBuilder
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
-@Serializable
 /**
  * Describes a single locale entry within a [LocalizationBundle].
  *
@@ -30,13 +29,12 @@ import kotlinx.serialization.Serializable
  *
  * Instances are typically created via JSON deserialization of a localization bundle file.
  *
- * @property locale BCP‑47 language tag (for example, "en-US") that keys this entry in the bundle.
  * @property displayName A friendly name for the locale suitable for display in UI.
  * @property path Relative or absolute path to the Fluent resource file for this locale.
  * @property defaults A map of variable name to default value injected into the evaluation context when loading.
  */
+@Serializable
 data class BundleEntry(
-    val locale: String,
     @SerialName("display_name") val displayName: String,
     val path: String,
     val defaults: Map<String, DefaultValue> = emptyMap()

@@ -1,9 +1,12 @@
 {
     // Fluently bundle config version 1 is currently being used, might be used for migrations later
     "version": 1,
+    // The default locale used for fallback resolution as BCP‑47 code
+    "default_locale": "en-US",
     // Entries represent all available locales in a bundle and can be queried programmatically
     "entries": {
-        "en_us": {
+        // Entry keys are their respective BCP‑47 language code
+        "en-US": {
             // Display name for showing in UIs so we don't have to load the entire localization file
             "display_name": "English (US)",
             // Path to the Fluent file relative to the bundle JSON
@@ -16,7 +19,17 @@
                 }
             }
         },
-        "de_de": {
+        "de-DE": {
+            "display_name": "Deutsch",
+            "path": "de_de.ftl",
+            "defaults": {
+                "lang_name": {
+                    "type": "string",
+                    "value": "Deutsch"
+                }
+            }
+        },
+        "de-AT": {
             "display_name": "Deutsch",
             "path": "de_de.ftl",
             "defaults": {

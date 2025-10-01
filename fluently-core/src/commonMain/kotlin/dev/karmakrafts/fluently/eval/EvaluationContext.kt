@@ -35,12 +35,18 @@ import dev.karmakrafts.fluently.util.Named
  * @property variables Variables available to expressions (strings or numbers), indexed by name.
  * @property parentStack Internal stack of currently-evaluating parents used for cycle detection.
  */
-data class EvaluationContext(
+@ConsistentCopyVisibility
+data class EvaluationContext @PublishedApi internal constructor(
     val file: LocalizationFile,
     val functions: Map<String, Function>,
     val variables: Map<String, Expr>,
     val parentStack: ArrayDeque<Named> = ArrayDeque() // Used for multi-level cycle detection
 ) {
+    // TODO: document this
+    operator fun plus(other: EvaluationContext): EvaluationContext {
+        return EvaluationContext(file, functions + other.functions, variables + other.variables, parentStack)
+    }
+
     /** Returns a string representing the cycle path when a self-reference is detected. */
     fun getParentCycle(): String = (parentStack.toList() + parentStack.first()) //
         .joinToString(" -> ") { element ->

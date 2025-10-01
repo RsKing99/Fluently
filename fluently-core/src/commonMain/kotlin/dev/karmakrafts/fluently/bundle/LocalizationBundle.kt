@@ -26,6 +26,7 @@ import kotlinx.io.Sink
 import kotlinx.io.Source
 import kotlinx.io.readString
 import kotlinx.io.writeString
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import org.intellij.lang.annotations.Language
 
@@ -37,12 +38,14 @@ import org.intellij.lang.annotations.Language
  * to deserialize a bundle definition, and [loadLocale] to obtain a parsed [LocalizationFile].
  *
  * @property version Schema version of the bundle; used to validate compatibility.
+ * @property defaultLocale The BCP-47 language code of the fallback locale used by this localization bundle.
  * @property entries Mapping from locale code to the corresponding [BundleEntry].
  */
 @ConsistentCopyVisibility
 @Serializable
 data class LocalizationBundle private constructor( // @formatter:off
     val version: Int = VERSION,
+    @SerialName("default_locale") val defaultLocale: String,
     val entries: Map<String, BundleEntry> = emptyMap()
 ) { // @formatter:on
     companion object {
@@ -80,16 +83,38 @@ data class LocalizationBundle private constructor( // @formatter:off
      */
     inline fun loadLocale(
         locale: String,
-        crossinline globalContextInit: EvaluationContextBuilder.() -> Unit = {},
-        resourceProvider: (String) -> Source
+        resourceProvider: (String) -> Source,
+        crossinline globalContextInit: EvaluationContextBuilder.() -> Unit = {}
     ): LocalizationFile {
-        val entry = entries[locale] ?: error("Could not load language $locale")
+        val entry = entries[locale] ?: entries[defaultLocale] ?: error("Could not load language $locale")
         return resourceProvider(entry.path).use { source ->
             LocalizationFile.parse(source) {
                 globalContextInit()
                 entry.applyDefaults()
             }
         }
+    }
+
+    /**
+     * Loads and parses the Fluent resource for the bundle's [defaultLocale].
+     *
+     * This is a convenience wrapper around [loadLocale] that delegates to it with
+     * [defaultLocale]. Any variables or functions provided by [globalContextInit]
+     * are added to the evaluation context before the entry's default values are applied
+     * via [BundleEntry.applyDefaults].
+     *
+     * @param globalContextInit Optional initializer for the evaluation context builder.
+     * It can be used to register global variables and functions available to all messages.
+     * @param resourceProvider Function that returns a [Source] for a given file path.
+     * Typically, this opens the .ftl file declared by the matching [BundleEntry].
+     * @return The parsed localization file for [defaultLocale].
+     * @throws IllegalStateException If the [defaultLocale] is not present in [entries].
+     */
+    inline fun loadDefaultLocale( // @formatter:off
+        resourceProvider: (String) -> Source,
+        crossinline globalContextInit: EvaluationContextBuilder.() -> Unit = {}
+    ): LocalizationFile { // @formatter:on
+        return loadLocale(defaultLocale, resourceProvider, globalContextInit)
     }
 
     /** Serializes this bundle to a compact JSON string. */

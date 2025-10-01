@@ -16,8 +16,6 @@
 
 package dev.karmakrafts.fluently.eval
 
-import dev.karmakrafts.fluently.LocalizationFile
-
 /**
  * Something that can be formatted to a string under a given [EvaluationContext].
  *
@@ -32,25 +30,4 @@ interface Evaluable {
      * @return The formatted string result.
      */
     fun evaluate(context: EvaluationContext): String
-}
-
-/**
- * Convenience overload that evaluates this [Evaluable] by constructing an [EvaluationContext]
- * for the given [file].
- *
- * The optional [contextInit] lambda may customize variables and functions using
- * [EvaluationContextBuilder] prior to building the context.
- *
- * Example:
- * - message.evaluate(file) { variable("name", "Alice") }
- *
- * @param file The localization file (bundle) providing entries available during evaluation.
- * @param contextInit Optional builder to configure variables and functions.
- * @return The formatted string result.
- */
-inline fun Evaluable.evaluate( // @formatter:off
-    file: LocalizationFile,
-    contextInit: EvaluationContextBuilder.() -> Unit = {}
-): String { // @formatter:on
-    return evaluate(EvaluationContextBuilder().apply(contextInit).build(file))
 }

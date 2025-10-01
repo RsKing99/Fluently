@@ -40,3 +40,4 @@ dependencyResolutionManagement {
 
 include("fluently-frontend")
 include("fluently-core")
+include("fluently-reactive")

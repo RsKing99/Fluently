@@ -22,7 +22,7 @@ import dev.karmakrafts.fluently.element.Attribute
 import dev.karmakrafts.fluently.entry.Message
 import dev.karmakrafts.fluently.eval.EvaluationContext
 import dev.karmakrafts.fluently.eval.EvaluationContextBuilder
-import dev.karmakrafts.fluently.eval.evaluate
+import dev.karmakrafts.fluently.eval.evaluationContext
 import dev.karmakrafts.fluently.frontend.FluentLexer
 import dev.karmakrafts.fluently.frontend.FluentParser
 import dev.karmakrafts.fluently.parser.ParserContext
@@ -51,15 +51,10 @@ import org.intellij.lang.annotations.Language
  */
 @ConsistentCopyVisibility
 data class LocalizationFile private constructor( // @formatter:off
-    val messages: MutableMap<String, Message> = HashMap(),
-    val globalContextInit: EvaluationContextBuilder.() -> Unit
+    internal val messages: MutableMap<String, Message> = HashMap(),
+    @PublishedApi internal val globalContextInit: EvaluationContextBuilder.() -> Unit
 ) { // @formatter:on
     companion object {
-        /**
-         * Creates an empty localization file with no messages and no global context initialization.
-         */
-        fun empty(): LocalizationFile = LocalizationFile(globalContextInit = {})
-
         /**
          * Constructs a localization file from an existing [messages] map.
          *
@@ -111,6 +106,8 @@ data class LocalizationFile private constructor( // @formatter:off
         }
     }
 
+    private val defaultContext: EvaluationContext = evaluationContext(this, globalContextInit)
+
     /**
      * Returns the message with the given [name], or null if it does not exist.
      */
@@ -131,7 +128,7 @@ data class LocalizationFile private constructor( // @formatter:off
         name: String,
         context: EvaluationContext
     ): String { // @formatter:on
-        return this[name]?.evaluate(context) ?: "<missing:$name>"
+        return this[name]?.evaluate(defaultContext + context) ?: "<missing:$name>"
     }
 
     /**
@@ -147,10 +144,10 @@ data class LocalizationFile private constructor( // @formatter:off
         name: String,
         crossinline contextInit: EvaluationContextBuilder.() -> Unit = {}
     ): String { // @formatter:on
-        return this[name]?.evaluate(this) {
+        return this[name]?.evaluate(evaluationContext(this) {
             globalContextInit()
             contextInit()
-        } ?: "<missing:$name>"
+        }) ?: "<missing:$name>"
     }
 
     /**
@@ -158,12 +155,13 @@ data class LocalizationFile private constructor( // @formatter:off
      *
      * Returns `<missing:entry.attribute>` if the attribute or message is not present.
      */
-    fun formatAttribute( // @formatter:off
+    fun format( // @formatter:off
         entryName: String,
         attribName: String,
         context: EvaluationContext
     ): String { // @formatter:on
-        return this[entryName, attribName]?.evaluate(context) ?: "<missing:$entryName.$attribName>"
+        return this[entryName, attribName]?.evaluate(defaultContext + context)
+            ?: "<missing:$entryName.$attribName>"
     }
 
     /**
@@ -173,14 +171,14 @@ data class LocalizationFile private constructor( // @formatter:off
      *
      * Returns `<missing:entry.attribute>` if the attribute or message is not defined.
      */
-    inline fun formatAttribute( // @formatter:off
+    inline fun format( // @formatter:off
         entryName: String,
         attribName: String,
         crossinline contextInit: EvaluationContextBuilder.() -> Unit = {}
     ): String { // @formatter:on
-        return this[entryName, attribName]?.evaluate(this) {
+        return this[entryName, attribName]?.evaluate(evaluationContext(this) {
             globalContextInit()
             contextInit()
-        } ?: "<missing:$entryName.$attribName>"
+        }) ?: "<missing:$entryName.$attribName>"
     }
 }
