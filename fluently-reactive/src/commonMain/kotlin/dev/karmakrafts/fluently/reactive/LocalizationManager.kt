@@ -65,34 +65,51 @@ class LocalizationManager( // @formatter:off
 
     private fun loadDefaultLocale(): LocalizationFile = bundle.loadDefaultLocale(resourceProvider, globalContextInit)
 
-    fun format( // @formatter:off
+    fun formatOrNull( // @formatter:off
         name: String,
         context: EvaluationContext
-    ): Flow<String> = currentLocalizations.mapLatest { file -> // @formatter:on
-        file.format(name, context)
+    ): Flow<String?> = currentLocalizations.combine(defaultLocalizations) { current, default ->
+        current.formatOrNull(name, context)
+            ?: default.formatOrNull(name, context)
     }
 
-    inline fun format( // @formatter:off
+    inline fun formatOrNull( // @formatter:off
         name: String,
         crossinline contextInit: EvaluationContextBuilder.() -> Unit = {}
-    ): Flow<String> = currentLocalizations.mapLatest { file -> // @formatter:on
-        file.format(name, contextInit)
+    ): Flow<String?> = currentLocalizations.combine(defaultLocalizations) { current, default ->
+        current.formatOrNull(name, contextInit)
+            ?: default.formatOrNull(name, contextInit)
     }
 
-    fun format( // @formatter:off
+    fun formatOrNull( // @formatter:off
         name: String,
         attribName: String,
         context: EvaluationContext
-    ): Flow<String> = currentLocalizations.mapLatest { file -> // @formatter:on
-        file.format(name, attribName, context)
+    ): Flow<String?> = currentLocalizations.combine(defaultLocalizations) { current, default ->
+        current.formatOrNull(name, attribName, context)
+            ?: default.formatOrNull(name, attribName, context)
     }
 
-    inline fun format( // @formatter:off
-        name: String, attribName: String,
+    inline fun formatOrNull( // @formatter:off
+        name: String,
+        attribName: String,
         crossinline contextInit: EvaluationContextBuilder.() -> Unit = {}
-    ): Flow<String> = currentLocalizations.mapLatest { file -> // @formatter:on
-        file.format(name, attribName, contextInit)
+    ): Flow<String?> = currentLocalizations.combine(defaultLocalizations) { current, default ->
+        current.formatOrNull(name, attribName, contextInit)
+            ?: default.formatOrNull(name, attribName, contextInit)
     }
+
+    fun format(name: String, context: EvaluationContext): Flow<String> = formatOrNull(name, context)
+        .mapLatest { text -> text ?: "<$name>" }
+
+    fun format(name: String, contextInit: EvaluationContextBuilder.() -> Unit = {}): Flow<String> =
+        formatOrNull(name, contextInit).mapLatest { text -> text ?: "<$name>" }
+
+    fun format(name: String, attribName: String, context: EvaluationContext): Flow<String> = formatOrNull(name, context)
+        .mapLatest { text -> text ?: "<$name.$attribName>" }
+
+    fun format(name: String, attribName: String, contextInit: EvaluationContextBuilder.() -> Unit = {}): Flow<String> =
+        formatOrNull(name, attribName, contextInit).mapLatest { text -> text ?: "<$name.$attribName>" }
 
     fun reload() {
         // Reload the default localization file

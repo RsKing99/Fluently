@@ -119,65 +119,50 @@ data class LocalizationFile private constructor( // @formatter:off
     operator fun get(entryName: String, attribName: String): Attribute? =
         messages[entryName]?.attributes?.get(attribName)
 
-    /**
-     * Formats the message identified by [name] using a pre-built [context].
-     *
-     * Returns a placeholder string of the form `<missing:name>` if the message is not present.
-     */
-    fun format( // @formatter:off
+    fun formatOrNull( // @formatter:off
         name: String,
         context: EvaluationContext
-    ): String { // @formatter:on
-        return this[name]?.evaluate(defaultContext + context) ?: "<missing:$name>"
+    ): String? { // @formatter:on
+        return this[name]?.evaluate(defaultContext + context)
     }
 
-    /**
-     * Formats the message [name] by building an [EvaluationContext] for this file.
-     *
-     * The [contextInit] lambda can customize variables or functions for this specific call.
-     * Values provided by [contextInit] are composed after [globalContextInit], so they can override
-     * defaults.
-     *
-     * Returns `<missing:name>` if the message is not defined.
-     */
-    inline fun format( // @formatter:off
+    inline fun formatOrNull( // @formatter:off
         name: String,
         crossinline contextInit: EvaluationContextBuilder.() -> Unit = {}
-    ): String { // @formatter:on
+    ): String? { // @formatter:on
         return this[name]?.evaluate(evaluationContext(this) {
             globalContextInit()
             contextInit()
-        }) ?: "<missing:$name>"
+        })
     }
 
-    /**
-     * Formats the attribute [attribName] of message [entryName] using a pre-built [context].
-     *
-     * Returns `<missing:entry.attribute>` if the attribute or message is not present.
-     */
-    fun format( // @formatter:off
+    fun formatOrNull( // @formatter:off
         entryName: String,
         attribName: String,
         context: EvaluationContext
-    ): String { // @formatter:on
-        return this[entryName, attribName]?.evaluate(defaultContext + context) ?: "<missing:$entryName.$attribName>"
+    ): String? { // @formatter:on
+        return this[entryName, attribName]?.evaluate(defaultContext + context)
     }
 
-    /**
-     * Formats the attribute [attribName] of message [entryName] by building an [EvaluationContext]
-     * for this file. The [contextInit] lambda can supply per-call variables and functions which are
-     * applied after [globalContextInit].
-     *
-     * Returns `<missing:entry.attribute>` if the attribute or message is not defined.
-     */
-    inline fun format( // @formatter:off
+    inline fun formatOrNull( // @formatter:off
         entryName: String,
         attribName: String,
         crossinline contextInit: EvaluationContextBuilder.() -> Unit = {}
-    ): String { // @formatter:on
+    ): String? { // @formatter:on
         return this[entryName, attribName]?.evaluate(evaluationContext(this) {
             globalContextInit()
             contextInit()
-        }) ?: "<missing:$entryName.$attribName>"
+        })
     }
+
+    fun format(name: String, context: EvaluationContext): String = formatOrNull(name, context) ?: "<$name>"
+
+    fun format(name: String, contextInit: EvaluationContextBuilder.() -> Unit): String =
+        formatOrNull(name, contextInit) ?: "<$name>"
+
+    fun format(name: String, attribName: String, context: EvaluationContext): String =
+        formatOrNull(name, attribName, context) ?: "<$name.$attribName>"
+
+    fun format(name: String, attribName: String, contextInit: EvaluationContextBuilder.() -> Unit): String =
+        formatOrNull(name, attribName, contextInit) ?: "<$name.$attribName>"
 }
