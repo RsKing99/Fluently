@@ -54,7 +54,7 @@ kotlin {
     }
     applyDefaultHierarchyTemplate()
     sourceSets {
-        commonMain {
+        val commonMain by getting {
             dependencies {
                 api(projects.fluentlyFrontend)
                 api(libs.kotlinx.serialization.core)
@@ -68,6 +68,9 @@ kotlin {
                 implementation(libs.kotlin.test)
             }
         }
+        val jvmAndAndroidMain by creating { dependsOn(commonMain) }
+        jvmMain { dependsOn(jvmAndAndroidMain) }
+        androidMain { dependsOn(jvmAndAndroidMain) }
     }
 }
 

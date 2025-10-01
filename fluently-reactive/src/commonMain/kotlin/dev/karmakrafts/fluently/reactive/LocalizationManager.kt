@@ -42,6 +42,8 @@ class LocalizationManager( // @formatter:off
     coroutineContext: CoroutineContext,
     @PublishedApi internal val globalContextInit: EvaluationContextBuilder.() -> Unit = {}
 ) { // @formatter:on
+    companion object
+
     @PublishedApi
     internal val coroutineScope: CoroutineScope = CoroutineScope(coroutineContext)
 
