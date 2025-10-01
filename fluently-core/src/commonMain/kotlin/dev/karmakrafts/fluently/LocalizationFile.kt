@@ -160,8 +160,7 @@ data class LocalizationFile private constructor( // @formatter:off
         attribName: String,
         context: EvaluationContext
     ): String { // @formatter:on
-        return this[entryName, attribName]?.evaluate(defaultContext + context)
-            ?: "<missing:$entryName.$attribName>"
+        return this[entryName, attribName]?.evaluate(defaultContext + context) ?: "<missing:$entryName.$attribName>"
     }
 
     /**

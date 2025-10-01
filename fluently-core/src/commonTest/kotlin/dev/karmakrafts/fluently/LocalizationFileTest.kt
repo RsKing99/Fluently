@@ -43,7 +43,8 @@ class LocalizationFileTest {
 
     @Test
     fun `Parse complex file`() {
-        val file = LocalizationFile.parse($$"""
+        val file = LocalizationFile.parse(
+            $$"""
             # Some line comments
             -my-term-1 = TESTING
             -my-term-2 = {-my-term-1}::
@@ -63,7 +64,8 @@ class LocalizationFileTest {
                 .foo = Testing
                 .bar = Testing
                 .baz = Testing
-        """.trimIndent())
+        """.trimIndent()
+        )
 
         assertEquals(4, file.messages.size)
 
