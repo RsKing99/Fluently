@@ -157,12 +157,12 @@ data class LocalizationFile private constructor( // @formatter:off
 
     fun format(name: String, context: EvaluationContext): String = formatOrNull(name, context) ?: "<$name>"
 
-    fun format(name: String, contextInit: EvaluationContextBuilder.() -> Unit): String =
+    fun format(name: String, contextInit: EvaluationContextBuilder.() -> Unit = {}): String =
         formatOrNull(name, contextInit) ?: "<$name>"
 
     fun format(name: String, attribName: String, context: EvaluationContext): String =
         formatOrNull(name, attribName, context) ?: "<$name.$attribName>"
 
-    fun format(name: String, attribName: String, contextInit: EvaluationContextBuilder.() -> Unit): String =
+    fun format(name: String, attribName: String, contextInit: EvaluationContextBuilder.() -> Unit = {}): String =
         formatOrNull(name, attribName, contextInit) ?: "<$name.$attribName>"
 }
