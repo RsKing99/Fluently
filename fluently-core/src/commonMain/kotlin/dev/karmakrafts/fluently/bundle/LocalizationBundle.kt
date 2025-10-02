@@ -46,7 +46,8 @@ import org.intellij.lang.annotations.Language
 data class LocalizationBundle private constructor( // @formatter:off
     val version: Int = VERSION,
     @SerialName("default_locale") val defaultLocale: String,
-    val entries: Map<String, BundleEntry> = emptyMap()
+    val entries: Map<String, BundleEntry> = emptyMap(),
+    val defaults: Map<String, DefaultValue> = emptyMap()
 ) { // @formatter:on
     companion object {
         /** Current supported [LocalizationBundle] schema version. */
@@ -103,7 +104,8 @@ data class LocalizationBundle private constructor( // @formatter:off
         return resourceProvider(entry.path).use { source ->
             LocalizationFile.parse(source) {
                 globalContextInit()
-                entry.applyDefaults()
+                variables(defaults.mapValues { (_, default) -> default.asExpr() })
+                variables(entry.defaults.mapValues { (_, default) -> default.asExpr() })
             }
         }
     }

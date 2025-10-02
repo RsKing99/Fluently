@@ -34,6 +34,16 @@ class EvaluationContextBuilder @PublishedApi internal constructor() {
     @PublishedApi
     internal val variables: HashMap<String, Expr> = HashMap()
 
+    /** Adds all given functions to the function map of this builder instance. */
+    fun functions(functions: Map<String, Function>) {
+        this.functions += functions
+    }
+
+    /** Adds all given variables to the variable map of this builder instance. */
+    fun variables(variables: Map<String, Expr>) {
+        this.variables += variables
+    }
+
     /** Adds an enum [value] as a lowercase string variable under [name]. */
     fun variable(name: String, value: Enum<*>) {
         variables[name] = StringLiteral(value.name.lowercase())

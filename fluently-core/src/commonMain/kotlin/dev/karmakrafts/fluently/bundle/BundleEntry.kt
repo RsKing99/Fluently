@@ -16,7 +16,6 @@
 
 package dev.karmakrafts.fluently.bundle
 
-import dev.karmakrafts.fluently.eval.EvaluationContextBuilder
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -38,17 +37,4 @@ data class BundleEntry(
     @SerialName("display_name") val displayName: String,
     val path: String,
     val defaults: Map<String, DefaultValue> = emptyMap()
-) {
-    /**
-     * Applies all [defaults] to the receiver [EvaluationContextBuilder].
-     *
-     * This is intended to be called while constructing the evaluation context for a localization file
-     * (see [LocalizationBundle.loadLocale]). Each default value calls through to its specific
-     * implementation to register the appropriate variable type.
-     */
-    context(builder: EvaluationContextBuilder) fun applyDefaults() {
-        builder.apply {
-            for ((name, value) in defaults) value.applyToContext(name)
-        }
-    }
-}
+)
