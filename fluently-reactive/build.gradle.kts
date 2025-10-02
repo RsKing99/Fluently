@@ -15,11 +15,14 @@
  */
 
 import dev.karmakrafts.conventions.configureJava
+import dev.karmakrafts.conventions.setProjectInfo
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
+import java.time.ZonedDateTime
 
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
     alias(libs.plugins.android.library)
+    alias(libs.plugins.dokka)
     signing
     `maven-publish`
 }
@@ -28,6 +31,7 @@ configureJava(libs.versions.java)
 
 @OptIn(ExperimentalWasmDsl::class) //
 kotlin {
+    withSourcesJar()
     compilerOptions {
         freeCompilerArgs.add("-Xcontext-parameters")
     }
@@ -78,4 +82,26 @@ android {
     defaultConfig {
         minSdk = libs.versions.androidMinimalSDK.get().toInt()
     }
+}
+
+dokka {
+    moduleName = project.name
+    pluginsConfiguration {
+        html {
+            footerMessage = "(c) ${ZonedDateTime.now().year} Karma Krafts & associates"
+        }
+    }
+}
+
+val dokkaJar by tasks.registering(Jar::class) {
+    dependsOn(tasks.dokkaGeneratePublicationHtml)
+    from(tasks.dokkaGeneratePublicationHtml.flatMap { it.outputDirectory })
+    archiveClassifier.set("javadoc")
+}
+
+publishing {
+    publications.withType<MavenPublication> {
+        artifact(dokkaJar)
+    }
+    setProjectInfo("Fluently Reactive", "Coroutines based reactive localization for the Fluently localization system")
 }

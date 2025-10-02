@@ -16,16 +16,19 @@
 
 import com.strumenta.antlrkotlin.gradle.AntlrKotlinTask
 import dev.karmakrafts.conventions.configureJava
+import dev.karmakrafts.conventions.setProjectInfo
 import org.gradle.jvm.tasks.Jar as JvmJar
 import org.gradle.kotlin.dsl.register
 import org.gradle.kotlin.dsl.withType
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask
+import java.time.ZonedDateTime
 
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
     alias(libs.plugins.android.library)
     alias(libs.plugins.antlrKotlin)
+    alias(libs.plugins.dokka)
     signing
     `maven-publish`
 }
@@ -34,6 +37,7 @@ configureJava(libs.versions.java)
 
 @OptIn(ExperimentalWasmDsl::class) //
 kotlin {
+    withSourcesJar()
     jvm()
     mingwX64()
     linuxX64()
@@ -99,4 +103,26 @@ tasks {
     named("prepareKotlinIdeaImport") {
         dependsOn(generateKotlinGrammarSource)
     }
+}
+
+dokka {
+    moduleName = project.name
+    pluginsConfiguration {
+        html {
+            footerMessage = "(c) ${ZonedDateTime.now().year} Karma Krafts & associates"
+        }
+    }
+}
+
+val dokkaJar by tasks.registering(Jar::class) {
+    dependsOn(tasks.dokkaGeneratePublicationHtml)
+    from(tasks.dokkaGeneratePublicationHtml.flatMap { it.outputDirectory })
+    archiveClassifier.set("javadoc")
+}
+
+publishing {
+    publications.withType<MavenPublication> {
+        artifact(dokkaJar)
+    }
+    setProjectInfo("Fluently Frontend", "Lexer and parser frontend for the Fluently localization system")
 }
