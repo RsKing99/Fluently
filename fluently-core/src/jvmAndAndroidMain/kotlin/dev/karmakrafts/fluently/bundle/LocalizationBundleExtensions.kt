@@ -21,12 +21,39 @@ import dev.karmakrafts.fluently.eval.EvaluationContextBuilder
 import kotlinx.io.asSource
 import kotlinx.io.buffered
 
+/**
+ * Creates a [LocalizationBundle] by reading a bundled resource from the classpath and
+ * parsing its JSON content.
+ *
+ * This is a convenience for JVM/Android targets where the bundle JSON is packaged as a resource
+ * and accessible via [Class.getResourceAsStream].
+ *
+ * @param path classpath resource path to the bundle JSON (e.g. "/i18n/bundle.json"). Must start with "/".
+ * @return the parsed [LocalizationBundle].
+ *
+ * @throws NullPointerException if any required resource for the locale cannot be found in the classpath
+ *  or if the given [path] doesn't exist within the classpath.
+ */
 fun LocalizationBundle.Companion.fromResource(path: String): LocalizationBundle {
     return this::class.java.getResourceAsStream(path)!!.reader().use { reader ->
         LocalizationBundle.fromJsonString(reader.readText())
     }
 }
 
+/**
+ * Loads a locale into this [LocalizationBundle] using resources from the classpath.
+ *
+ * For each locale file path requested by [LocalizationBundle.loadLocale], this overload opens the
+ * corresponding resource stream via [Class.getResourceAsStream] and wires it as a buffered source.
+ * This is useful on JVM/Android when locale assets are packaged as resources.
+ *
+ * @param locale the locale identifier to load (e.g. "en", "en-US").
+ * @param globalContextInit optional lambda to populate the global [EvaluationContextBuilder]
+ * that will be available during message evaluation.
+ * @return the loaded [LocalizationFile] for the given [locale].
+ *
+ * @throws NullPointerException if any required resource for the locale cannot be found in the classpath.
+ */
 inline fun LocalizationBundle.loadLocaleFromResource( // @formatter:off
     locale: String,
     crossinline globalContextInit: EvaluationContextBuilder.() -> Unit = {}

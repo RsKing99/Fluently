@@ -20,6 +20,21 @@ import dev.karmakrafts.fluently.eval.EvaluationContextBuilder
 import kotlinx.io.asSource
 import kotlinx.io.buffered
 
+/**
+ * Parses a [LocalizationFile] from a classpath resource on JVM/Android.
+ *
+ * This convenience function opens the resource via [Class.getResourceAsStream],
+ * wraps it as a buffered source and delegates to [LocalizationFile.parse].
+ * It is intended for cases where your .ftl or localization files are packaged
+ * as resources within your application or library JAR.
+ *
+ * @param path classpath resource path to the localization file (e.g. "/i18n/en.ftl"). Must start with "/".
+ * @param globalContextInit optional initializer for the global [EvaluationContextBuilder]
+ * that will be available during message evaluation.
+ * @return the parsed [LocalizationFile] instance.
+ *
+ * @throws NullPointerException if [path] doesn't exist within the classpath.
+ */
 fun LocalizationFile.Companion.parseResource( // @formatter:off
     path: String,
     globalContextInit: EvaluationContextBuilder.() -> Unit = {}
