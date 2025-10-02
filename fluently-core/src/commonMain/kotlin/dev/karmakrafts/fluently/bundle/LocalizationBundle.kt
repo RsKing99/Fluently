@@ -69,6 +69,19 @@ data class LocalizationBundle private constructor( // @formatter:off
     inline val locales: Set<String> get() = entries.keys
 
     /**
+     * Returns a human‑readable display name for the given [locale] code.
+     *
+     * If the bundle contains an entry for [locale] with a custom [BundleEntry.displayName],
+     * that value is returned; otherwise the original [locale] code is returned as a
+     * sensible fallback. This is useful when presenting a list of languages in UI where
+     * some locales may not provide a localized name.
+     *
+     * @param locale BCP‑47 locale code to look up.
+     * @return The display name from the bundle entry, or [locale] if not defined.
+     */
+    fun getLocaleName(locale: String): String = entries[locale]?.displayName ?: locale
+
+    /**
      * Loads and parses the Fluent resource for [locale] into a [LocalizationFile].
      *
      * The [resourceProvider] is responsible for returning a [Source] for the file path declared by the
