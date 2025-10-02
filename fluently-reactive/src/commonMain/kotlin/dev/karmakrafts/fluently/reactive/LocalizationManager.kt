@@ -45,7 +45,6 @@ import kotlin.coroutines.CoroutineContext
  * [locale] changes. All formatting functions combine the current locale with the default locale so
  * missing messages are transparently resolved from the default.
  *
- * Parameters:
  * @param bundle A [LocalizationBundle] that knows how to list locales and load per-locale files.
  * @param resourceProvider A function that opens a resource by path for reading (used by the bundle).
  * @param coroutineContext Coroutine context used for internal reactive pipelines and scoping.
