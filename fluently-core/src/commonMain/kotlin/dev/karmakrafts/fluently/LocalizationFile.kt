@@ -119,6 +119,17 @@ data class LocalizationFile private constructor( // @formatter:off
     operator fun get(entryName: String, attribName: String): Attribute? =
         messages[entryName]?.attributes?.get(attribName)
 
+    /**
+     * Formats the message with the given [name] using the provided [context].
+     *
+     * The supplied [context] is merged with this file's preconfigured [globalContextInit]
+     * (captured in [defaultContext]) so that variables and functions from both are available
+     * during evaluation.
+     *
+     * @param name The message identifier to format.
+     * @param context Additional [EvaluationContext] to merge for this call.
+     * @return The formatted string, or null if the message does not exist.
+     */
     fun formatOrNull( // @formatter:off
         name: String,
         context: EvaluationContext
@@ -126,6 +137,16 @@ data class LocalizationFile private constructor( // @formatter:off
         return this[name]?.evaluate(defaultContext + context)
     }
 
+    /**
+     * Formats the message [name] by building a transient [EvaluationContext] via [contextInit].
+     *
+     * The created context is combined with this file's [globalContextInit] so that shared
+     * variables and functions are always available.
+     *
+     * @param name The message identifier to format.
+     * @param contextInit Lambda to populate a [EvaluationContextBuilder] per-call.
+     * @return The formatted string, or null if the message does not exist.
+     */
     inline fun formatOrNull( // @formatter:off
         name: String,
         crossinline contextInit: EvaluationContextBuilder.() -> Unit = {}
@@ -136,6 +157,17 @@ data class LocalizationFile private constructor( // @formatter:off
         })
     }
 
+    /**
+     * Formats the attribute [attribName] of message [entryName] using the provided [context].
+     *
+     * The supplied [context] is merged with this file's [defaultContext] derived from
+     * [globalContextInit].
+     *
+     * @param entryName The message identifier that owns the attribute.
+     * @param attribName The attribute name to format.
+     * @param context Additional [EvaluationContext] to merge for this call.
+     * @return The formatted string, or null if the message or attribute does not exist.
+     */
     fun formatOrNull( // @formatter:off
         entryName: String,
         attribName: String,
@@ -144,6 +176,16 @@ data class LocalizationFile private constructor( // @formatter:off
         return this[entryName, attribName]?.evaluate(defaultContext + context)
     }
 
+    /**
+     * Formats the attribute [attribName] of message [entryName] by constructing a per-call
+     * [EvaluationContext] via [contextInit]. The resulting context is combined with the
+     * file-level [globalContextInit].
+     *
+     * @param entryName The message identifier that owns the attribute.
+     * @param attribName The attribute name to format.
+     * @param contextInit Lambda to populate a [EvaluationContextBuilder] per-call.
+     * @return The formatted string, or null if the message or attribute does not exist.
+     */
     inline fun formatOrNull( // @formatter:off
         entryName: String,
         attribName: String,
@@ -155,14 +197,54 @@ data class LocalizationFile private constructor( // @formatter:off
         })
     }
 
+    /**
+     * Formats the message [name] and returns a non-null string.
+     *
+     * If the message does not exist, returns a placeholder token in the form "<name>".
+     *
+     * @param name The message identifier to format.
+     * @param context The [EvaluationContext] to merge with the file-level context.
+     * @return The formatted message, or a placeholder if missing.
+     */
     fun format(name: String, context: EvaluationContext): String = formatOrNull(name, context) ?: "<$name>"
 
+    /**
+     * Formats the message [name] using an [EvaluationContext] built by [contextInit].
+     *
+     * If the message does not exist, returns a placeholder token in the form "<name>".
+     *
+     * @param name The message identifier to format.
+     * @param contextInit Lambda to populate a [EvaluationContextBuilder] per-call.
+     * @return The formatted message, or a placeholder if missing.
+     */
     fun format(name: String, contextInit: EvaluationContextBuilder.() -> Unit = {}): String =
         formatOrNull(name, contextInit) ?: "<$name>"
 
+    /**
+     * Formats the attribute [attribName] of message [name] and returns a non-null string.
+     *
+     * If the attribute or message does not exist, returns a placeholder token in the form
+     * "<name.attribName>".
+     *
+     * @param name The message identifier that owns the attribute.
+     * @param attribName The attribute name to format.
+     * @param context The [EvaluationContext] to merge with the file-level context.
+     * @return The formatted attribute, or a placeholder if missing.
+     */
     fun format(name: String, attribName: String, context: EvaluationContext): String =
         formatOrNull(name, attribName, context) ?: "<$name.$attribName>"
 
+    /**
+     * Formats the attribute [attribName] of message [name] using a context built by [contextInit].
+     *
+     * If the attribute or message does not exist, returns a placeholder token in the form
+     * "<name.attribName>".
+     *
+     * @param name The message identifier that owns the attribute.
+     * @param attribName The attribute name to format.
+     * @param contextInit Lambda to populate a [EvaluationContextBuilder] per-call.
+     * @return The formatted attribute, or a placeholder if missing.
+     */
     fun format(name: String, attribName: String, contextInit: EvaluationContextBuilder.() -> Unit = {}): String =
         formatOrNull(name, attribName, contextInit) ?: "<$name.$attribName>"
 }
