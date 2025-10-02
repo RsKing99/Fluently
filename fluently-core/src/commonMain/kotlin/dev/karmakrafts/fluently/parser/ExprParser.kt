@@ -217,7 +217,7 @@ internal class ExprParser(
             val elements = variant.pattern()
                 .patternElement()
                 .asSequence()
-                .map { element -> element.accept(context.patternElementParser).first() }
+                .flatMap { element -> element.accept(context.patternElementParser) }
                 .toList()
             variants[key] = SelectExpr.Variant(key, elements)
         }
@@ -227,7 +227,7 @@ internal class ExprParser(
         val elements = defaultVariant.pattern()
             .patternElement()
             .asSequence()
-            .map { element -> element.accept(context.patternElementParser).first() }
+            .flatMap { element -> element.accept(context.patternElementParser) }
             .toList()
         variants[defaultKey] = SelectExpr.Variant(defaultKey, elements, true)
 
