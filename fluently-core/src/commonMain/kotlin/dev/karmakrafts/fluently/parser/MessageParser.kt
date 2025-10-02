@@ -38,7 +38,7 @@ internal class MessageParser(
         val attribElements = ctx.pattern()
             .patternElement()
             .asSequence()
-            .map { element -> element.accept(context.patternElementParser).first() }
+            .flatMap { element -> element.accept(context.patternElementParser) }
             .toList()
         return Attribute(entryName, name, attribElements)
     }
@@ -48,7 +48,7 @@ internal class MessageParser(
         val elements = ctx.pattern()
             ?.patternElement()
             ?.asSequence()
-            ?.map { element -> element.accept(context.patternElementParser).first() }
+            ?.flatMap { element -> element.accept(context.patternElementParser) }
             ?.toList() ?: emptyList()
         // @formatter:off
         val attributes = ctx.attribute()

@@ -42,7 +42,7 @@ internal class TermParser(
         val attribElements = ctx.pattern()
             .patternElement()
             .asSequence()
-            .map { element -> element.accept(patternElementParser).first() }
+            .flatMap { element -> element.accept(patternElementParser) }
             .toList()
         return Attribute(entryName, name, attribElements)
     }
@@ -52,7 +52,7 @@ internal class TermParser(
         val elements = ctx.pattern()
             .patternElement()
             .asSequence()
-            .map { element -> element.accept(patternElementParser).first() }
+            .flatMap { element -> element.accept(patternElementParser) }
             .toList()
         // @formatter:off
         val attributes = ctx.attribute()
