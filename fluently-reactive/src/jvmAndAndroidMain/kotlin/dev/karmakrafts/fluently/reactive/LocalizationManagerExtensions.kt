@@ -23,6 +23,27 @@ import kotlinx.io.asSource
 import kotlinx.io.buffered
 import kotlin.coroutines.CoroutineContext
 
+/**
+ * Creates a JVM/Android-backed LocalizationManager that loads Fluent resources from the classpath.
+ *
+ * This convenience factory wires LocalizationManager with a resourceProvider that uses
+ * Class.getResourceAsStream to open files bundled into your application JAR or Android APK.
+ * Use this overload when you already have an initialized LocalizationBundle instance
+ * (e.g., created via LocalizationBundle.fromResource).
+ *
+ * Typical usage:
+ * ```
+ * val manager = LocalizationManager.fromResources(bundle, Dispatchers.Main)
+ * ```
+ *
+ * @param bundle The bundle describing available locales and how to locate per-locale resources.
+ * @param coroutineContext Coroutine context used by the manager's reactive pipelines.
+ * @param globalContextInit Optional builder applied to each EvaluationContext used for formatting
+ *   to inject shared variables/functions/terms.
+ *
+ * @throws [NullPointerException] when the one of the bundle's Fluent files does not
+ *  exist within the current classpath.
+ */
 fun LocalizationManager.Companion.fromResources(
     bundle: LocalizationBundle,
     coroutineContext: CoroutineContext,
@@ -31,6 +52,30 @@ fun LocalizationManager.Companion.fromResources(
     this::class.java.getResourceAsStream(path)!!.asSource().buffered()
 }, coroutineContext, globalContextInit)
 
+/**
+ * Creates a LocalizationManager loading resources from a base classpath directory.
+ *
+ * The function expects a directory structure packaged into the classpath as follows:
+ * - "$basePath/languages.json" — bundle manifest with locales and default locale
+ * - "$basePath/<file>.ftl" — per-locale Fluent files referenced by the bundle
+ *
+ * Internally it constructs the LocalizationBundle from languages.json and uses
+ * Class.getResourceAsStream to read all subsequent files.
+ *
+ * Example:
+ * ```
+ * val manager = LocalizationManager.fromResources("/i18n", Dispatchers.Main)
+ * ```
+ *
+ * @param basePath Classpath base directory where languages.json and localization files live
+ *             (for example: "/i18n" or "/localization").
+ * @param coroutineContext Coroutine context used by the manager's reactive pipelines.
+ * @param globalContextInit Optional builder applied to each EvaluationContext used for formatting
+ *   to inject shared variables/functions/terms.
+ *
+ * @throws [NullPointerException] when the `languages.json` or one of the bundle's
+ *  Fluent files does not exist witih the current classpath.
+ */
 fun LocalizationManager.Companion.fromResources( // @formatter:off
     basePath: String,
     coroutineContext: CoroutineContext,
