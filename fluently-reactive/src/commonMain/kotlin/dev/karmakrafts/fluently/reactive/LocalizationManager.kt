@@ -170,7 +170,7 @@ class LocalizationManager( // @formatter:off
      *
      * Emits a placeholder "<name.attrib>" if the attribute cannot be found.
      */
-    fun format(name: String, attribName: String, context: EvaluationContext): Flow<String> = formatOrNull(name, context)
+    fun format(name: String, attribName: String, context: EvaluationContext): Flow<String> = formatOrNull(name, attribName, context)
         .mapLatest { text -> text ?: "<$name.$attribName>" }
 
     /**
