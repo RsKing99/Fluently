@@ -42,7 +42,18 @@ data class EvaluationContext @PublishedApi internal constructor(
     val variables: Map<String, Expr>,
     val parentStack: ArrayDeque<Named> = ArrayDeque() // Used for multi-level cycle detection
 ) {
-    // TODO: document this
+    /**
+     * Returns a new context that contains this context extended with [other].
+     *
+     * Merge rules:
+     * - The [functions] map is merged with entries from [EvaluationContext.functions] taking precedence on key conflicts.
+     * - The [variables] map is merged with entries from [EvaluationContext.variables] taking precedence on key conflicts.
+     * - The [file] remains the same as in this context.
+     * - The [parentStack] reference is reused (not copied) so cycle detection continues across nested evaluations.
+     *
+     * This is useful to temporarily introduce additional variables or functions for a sub‑evaluation
+     * without mutating the original context.
+     */
     operator fun plus(other: EvaluationContext): EvaluationContext {
         return EvaluationContext(file, functions + other.functions, variables + other.variables, parentStack)
     }
