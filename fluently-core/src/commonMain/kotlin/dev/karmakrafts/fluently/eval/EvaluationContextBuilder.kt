@@ -83,9 +83,20 @@ class EvaluationContextBuilder @PublishedApi internal constructor() {
     ) // @formatter:on
 }
 
-inline fun evaluationContext( // @formatter:off
-    file: LocalizationFile,
-    block: EvaluationContextBuilder.() -> Unit
-): EvaluationContext { // @formatter:on
-    return EvaluationContextBuilder().apply(block).build(file)
+/**
+ * Specification block (DSL) used by [EvaluationContextBuilder].
+ *
+ * This typealias represents the builder lambda that configures variables and functions
+ * before creating an [EvaluationContext].
+ */
+typealias EvaluationContextSpec = EvaluationContextBuilder.() -> Unit
+
+/**
+ * Creates an [EvaluationContext] for the given [file] using a builder [spec].
+ *
+ * This is a convenience for `EvaluationContextBuilder().apply(spec).build(file)`.
+ * Typical usage is to pass variables and functions needed by message evaluation.
+ */
+inline fun evaluationContext(file: LocalizationFile, spec: EvaluationContextSpec): EvaluationContext {
+    return EvaluationContextBuilder().apply(spec).build(file)
 }
