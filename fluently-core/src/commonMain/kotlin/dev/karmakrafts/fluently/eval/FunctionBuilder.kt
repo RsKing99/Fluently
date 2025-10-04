@@ -25,7 +25,7 @@ import dev.karmakrafts.fluently.expr.StringLiteral
  * Instances are created by [EvaluationContextBuilder.function] and configured by setting [returnType],
  * adding [parameter]s, and providing an [action] (the callback body).
  */
-class FunctionBuilder @PublishedApi internal constructor(private val name: String) {
+class FunctionBuilder(private val name: String) {
     /** The function's static return type. Defaults to [ExprType.STRING]. */
     var returnType: ExprType = ExprType.STRING
     private val parameters: ArrayList<Pair<String, ExprType>> = ArrayList()
@@ -42,8 +42,7 @@ class FunctionBuilder @PublishedApi internal constructor(private val name: Strin
     }
 
     /** Builds the immutable [Function] instance. */
-    @PublishedApi
-    internal fun build(): Function = Function( // @formatter:off
+    fun build(): Function = Function( // @formatter:off
         name = name,
         returnType = returnType,
         parameters = parameters,

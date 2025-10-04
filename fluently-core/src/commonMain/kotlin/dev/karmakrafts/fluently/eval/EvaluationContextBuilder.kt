@@ -44,24 +44,34 @@ class EvaluationContextBuilder @PublishedApi internal constructor() {
         this.variables += variables
     }
 
+    /** Adds the given expression (literal) as a value under [name]. */
+    fun variable(name: String, value: Expr) {
+        variables[name] = value
+    }
+
     /** Adds an enum [value] as a lowercase string variable under [name]. */
-    fun variable(name: String, value: Enum<*>) {
+    fun enumVariable(name: String, value: Enum<*>) {
         variables[name] = StringLiteral(value.name.lowercase())
     }
 
     /** Adds a string [value] variable under [name]. */
-    fun variable(name: String, value: String) {
+    fun stringVariable(name: String, value: String) {
         variables[name] = StringLiteral(value)
     }
 
     /** Adds a boolean [value] variable under [name] (stored as a string). */
-    fun variable(name: String, value: Boolean) {
+    fun boolVariable(name: String, value: Boolean) {
         variables[name] = StringLiteral(value.toString())
     }
 
     /** Adds a numeric [value] variable under [name]. */
-    fun variable(name: String, value: Number) {
+    fun numberVariable(name: String, value: Number) {
         variables[name] = NumberLiteral(value)
+    }
+
+    /** Registers a function named [name]. */
+    fun function(name: String, function: Function) {
+        functions[name] = function
     }
 
     /** Registers a function named [name] using a [FunctionBuilder] DSL. */
@@ -75,8 +85,7 @@ class EvaluationContextBuilder @PublishedApi internal constructor() {
      * Normally not called directly; prefer [Evaluable.evaluate]. Marked [PublishedApi] to make it
      * accessible to inline call sites while keeping the constructor internal.
      */
-    @PublishedApi
-    internal fun build(file: LocalizationFile): EvaluationContext = EvaluationContext( // @formatter:off
+    fun build(file: LocalizationFile): EvaluationContext = EvaluationContext( // @formatter:off
         file = file,
         functions = functions,
         variables = variables

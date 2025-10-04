@@ -24,11 +24,12 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.mapLatest
-import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.flow.update
 import kotlinx.io.Source
 import kotlin.coroutines.CoroutineContext
@@ -88,11 +89,11 @@ class LocalizationManager( // @formatter:off
      * Hot state flow with the [LocalizationFile] for the current [locale]. When the locale equals
      * the default, this simply points to [defaultLocalizations].
      */
-    val currentLocalizations: StateFlow<LocalizationFile> =
+    val currentLocalizations: SharedFlow<LocalizationFile> =
         locale.combine(defaultLocalizations) { locale, defaultLocalizations ->
             if (locale == bundle.defaultLocale) defaultLocalizations
             else bundle.loadLocale(locale, resourceProvider, globalContextInit)
-        }.stateIn(coroutineScope, SharingStarted.Eagerly, _defaultLocalizations.value)
+        }.shareIn(coroutineScope, SharingStarted.Eagerly, 1)
 
     private fun loadDefaultLocale(): LocalizationFile = bundle.loadDefaultLocale(resourceProvider, globalContextInit)
 
@@ -104,9 +105,12 @@ class LocalizationManager( // @formatter:off
      */
     fun formatOrNull( // @formatter:off
         name: String,
-        context: EvaluationContext
-    ): Flow<String?> = currentLocalizations.combine(defaultLocalizations) { current, default ->
-        current.formatOrNull(name, context) ?: default.formatOrNull(name, context)
+        context: ReactiveEvaluationContext
+    ): Flow<String?> {
+        val contextFlow = context.asContextFlow()
+        return combine(currentLocalizations, defaultLocalizations, contextFlow) { current, default, context ->
+            current.formatOrNull(name, context) ?: default.formatOrNull(name, context)
+        }
     }
 
     /**
@@ -118,9 +122,9 @@ class LocalizationManager( // @formatter:off
      */
     inline fun formatOrNull( // @formatter:off
         name: String,
-        crossinline contextInit: EvaluationContextBuilder.() -> Unit = {}
-    ): Flow<String?> = currentLocalizations.combine(defaultLocalizations) { current, default ->
-        current.formatOrNull(name, contextInit) ?: default.formatOrNull(name, contextInit)
+        crossinline contextInit: ReactiveEvaluationContextBuilder.() -> Unit = {}
+    ): Flow<String?> {
+        return formatOrNull(name, reactiveEvaluationContext(currentLocalizations, contextInit))
     }
 
     /**
@@ -131,9 +135,12 @@ class LocalizationManager( // @formatter:off
     fun formatOrNull( // @formatter:off
         name: String,
         attribName: String,
-        context: EvaluationContext
-    ): Flow<String?> = currentLocalizations.combine(defaultLocalizations) { current, default ->
-        current.formatOrNull(name, attribName, context) ?: default.formatOrNull(name, attribName, context)
+        context: ReactiveEvaluationContext
+    ): Flow<String?> {
+        val contextFlow = context.asContextFlow()
+        return combine(currentLocalizations, defaultLocalizations, contextFlow) { current, default, context ->
+            current.formatOrNull(name, attribName, context) ?: default.formatOrNull(name, attribName, context)
+        }
     }
 
     /**
@@ -143,9 +150,9 @@ class LocalizationManager( // @formatter:off
     inline fun formatOrNull( // @formatter:off
         name: String,
         attribName: String,
-        crossinline contextInit: EvaluationContextBuilder.() -> Unit = {}
-    ): Flow<String?> = currentLocalizations.combine(defaultLocalizations) { current, default ->
-        current.formatOrNull(name, attribName, contextInit) ?: default.formatOrNull(name, attribName, contextInit)
+        crossinline contextInit: ReactiveEvaluationContextBuilder.() -> Unit = {}
+    ): Flow<String?> {
+        return formatOrNull(name, attribName, reactiveEvaluationContext(currentLocalizations, contextInit))
     }
 
     /**
@@ -154,7 +161,7 @@ class LocalizationManager( // @formatter:off
      * Unlike [formatOrNull], this never emits null. If the message is missing it emits a readable
      * placeholder in the form of "<name>".
      */
-    fun format(name: String, context: EvaluationContext): Flow<String> = formatOrNull(name, context)
+    fun format(name: String, context: ReactiveEvaluationContext): Flow<String> = formatOrNull(name, context)
         .mapLatest { text -> text ?: "<$name>" }
 
     /**
@@ -162,7 +169,7 @@ class LocalizationManager( // @formatter:off
      *
      * Emits a placeholder "<name>" if the message cannot be found.
      */
-    fun format(name: String, contextInit: EvaluationContextBuilder.() -> Unit = {}): Flow<String> =
+    fun format(name: String, contextInit: ReactiveEvaluationContextBuilder.() -> Unit = {}): Flow<String> =
         formatOrNull(name, contextInit).mapLatest { text -> text ?: "<$name>" }
 
     /**
@@ -170,14 +177,14 @@ class LocalizationManager( // @formatter:off
      *
      * Emits a placeholder "<name.attrib>" if the attribute cannot be found.
      */
-    fun format(name: String, attribName: String, context: EvaluationContext): Flow<String> = formatOrNull(name, attribName, context)
+    fun format(name: String, attribName: String, context: ReactiveEvaluationContext): Flow<String> = formatOrNull(name, attribName, context)
         .mapLatest { text -> text ?: "<$name.$attribName>" }
 
     /**
      * Formats an attribute [attribName] of a message [name] using a lazily built context via
      * [contextInit]. Emits a placeholder "<name.attrib>" if the attribute cannot be found.
      */
-    fun format(name: String, attribName: String, contextInit: EvaluationContextBuilder.() -> Unit = {}): Flow<String> =
+    fun format(name: String, attribName: String, contextInit: ReactiveEvaluationContextBuilder.() -> Unit = {}): Flow<String> =
         formatOrNull(name, attribName, contextInit).mapLatest { text -> text ?: "<$name.$attribName>" }
 
     /**

@@ -19,6 +19,7 @@ package dev.karmakrafts.fluently.reactive
 import dev.karmakrafts.fluently.bundle.LocalizationBundle
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.test.runTest
@@ -69,22 +70,26 @@ class LocalizationManagerTest {
     fun `Format message using current locale`() = runTest {
         val manager = LocalizationManager(bundle, testSource { locale ->
             if (locale == "en_us.ftl") {
-                return@testSource """
-                    my-entry = Hello, World!
+                return@testSource $$"""
+                    my-entry = Hello, {$myValue}!
                 """.trimIndent()
             }
-            """
-                my-entry = Hallo, Welt!
+            $$"""
+                my-entry = Hallo, {$myValue}!
             """.trimIndent()
         }, backgroundScope.coroutineContext)
 
-        val entry = manager.format("my-entry").stateIn(backgroundScope)
+        val myValue = MutableStateFlow("World")
+        val entry = manager.format("my-entry") {
+            reactiveStringVariable("myValue", myValue)
+        }.stateIn(backgroundScope)
 
         manager.locale.value = "en-US"
         delay(50)
         entry.value shouldBe "Hello, World!"
 
         manager.locale.value = "de-DE"
+        myValue.value = "Welt"
         delay(50)
         entry.value shouldBe "Hallo, Welt!"
     }

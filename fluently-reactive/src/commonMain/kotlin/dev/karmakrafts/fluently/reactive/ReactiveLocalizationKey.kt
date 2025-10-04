@@ -16,23 +16,34 @@
 
 package dev.karmakrafts.fluently.reactive
 
-import dev.karmakrafts.fluently.eval.EvaluationContext
 import dev.karmakrafts.fluently.eval.Function
 import dev.karmakrafts.fluently.expr.Expr
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.mapLatest
 
-internal data class LocalizationKey( // @formatter:off
+@OptIn(ExperimentalCoroutinesApi::class)
+internal data class ReactiveLocalizationKey( // @formatter:off
     val name: String,
     val attribName: String?,
     val functions: Map<String, Function>,
     val variables: Map<String, Expr>
 ) { // @formatter:on
     companion object {
-        fun fromContext(name: String, context: EvaluationContext): LocalizationKey {
-            return LocalizationKey(name, null, context.functions, context.variables)
+        fun fromContext(name: String, context: ReactiveEvaluationContext): Flow<ReactiveLocalizationKey> {
+            return context.asContextFlow().mapLatest { context ->
+                ReactiveLocalizationKey(name, null, context.functions, context.variables)
+            }
         }
 
-        fun fromContext(name: String, attribName: String, context: EvaluationContext): LocalizationKey {
-            return LocalizationKey(name, attribName, context.functions, context.variables)
+        fun fromContext(
+            name: String,
+            attribName: String,
+            context: ReactiveEvaluationContext
+        ): Flow<ReactiveLocalizationKey> {
+            return context.asContextFlow().mapLatest { context ->
+                ReactiveLocalizationKey(name, attribName, context.functions, context.variables)
+            }
         }
     }
 }

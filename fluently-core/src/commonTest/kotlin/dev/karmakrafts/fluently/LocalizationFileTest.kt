@@ -71,7 +71,7 @@ class LocalizationFileTest {
 
         assertEquals("""Testing""", file.format("message-number-three", "foo"))
         assertEquals("""fops""", file.format("animal-type") {
-            variable("test", "wolf")
+            stringVariable("test", "wolf")
         })
 
         assertEquals("""TESTING:: Karma Krafts""", file.format("message-number-one"))
@@ -80,7 +80,7 @@ class LocalizationFileTest {
         assertEquals(
             """It's a 🐺${"\n\n"} wolp! Pure Kotlin Fluent implementation (42)!!""",
             file.format("message-number-three") {
-                variable("test", "wolf")
+                stringVariable("test", "wolf")
                 function("DEXCL") {
                     parameter("name", ExprType.STRING)
                     parameter("index", ExprType.NUMBER)

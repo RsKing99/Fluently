@@ -64,7 +64,7 @@ builtin functions and variables which are exported into the Fluent file using a 
 ```kotlin
 val file = LocalizationFile.parse(fileContent) {
     // Define custom variables
-    variable("myVar", "Hello, World!")
+    stringVariable("myVar", "Hello, World!")
     
     // Define custom functions
     function("MYFUNC") {
@@ -130,7 +130,11 @@ val manager = LocalizationManager(bundle, { path ->
 }, coroutineScope.coroutineContext)
 
 // Create a cold flow for the given localization entry
-val entry = manager.format("entryName", "attribName") { /* context init */ }
+val someValue = MutableStateFlow("Some text")
+val entry = manager.format("entryName", "attribName") { 
+    // We can define variables based on other flows, so the localization is re-emitted when the input variable changes
+    reactiveStringVariable("someValue", someValue)
+}
 ```
 
 In order to properly memoize formatted strings and to handle hot flow lifecycles,  

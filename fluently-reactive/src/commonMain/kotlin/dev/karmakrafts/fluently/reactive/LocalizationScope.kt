@@ -17,11 +17,12 @@
 package dev.karmakrafts.fluently.reactive
 
 import dev.karmakrafts.fluently.eval.EvaluationContext
-import dev.karmakrafts.fluently.eval.EvaluationContextBuilder
-import dev.karmakrafts.fluently.eval.evaluationContext
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -54,76 +55,43 @@ import kotlin.reflect.KMutableProperty1
  * @param coroutineScope The [CoroutineScope] used for sharing and callback collection. By default,
  * it is created from the manager's coroutine context.
  */
+@OptIn(ExperimentalCoroutinesApi::class)
 class LocalizationScope( // @formatter:off
     @PublishedApi internal val localizationManager: LocalizationManager,
     @PublishedApi internal val coroutineScope: CoroutineScope = CoroutineScope(localizationManager.coroutineContext)
 ) { // @formatter:on
 
-    private val cache: HashMap<LocalizationKey, SharedFlow<String>> = HashMap()
+    private val cache: HashMap<ReactiveLocalizationKey, SharedFlow<String>> = HashMap()
     private val cacheMutex: Mutex = Mutex()
 
-    /**
-     * Formats a localized message identified by [name] using the provided [context].
-     *
-     * The result is a hot [SharedFlow] that emits and re-emits when the underlying
-     * localization data or inputs referenced by [context] change. Within the same scope,
-     * identical calls are memoized and share the same upstream flow.
-     *
-     * @param name The message identifier.
-     * @param context An explicit [EvaluationContext] to use for formatting.
-     * @return A [SharedFlow] with a replay of the latest formatted string.
-     */
-    suspend fun format(name: String, context: EvaluationContext): SharedFlow<String> {
-        return cacheMutex.withLock {
-            cache.getOrPut(LocalizationKey.fromContext(name, context)) {
-                localizationManager.format(name, context).shareIn(coroutineScope, SharingStarted.WhileSubscribed(), 1)
+    suspend fun format(name: String, context: ReactiveEvaluationContext): Flow<String> {
+        return ReactiveLocalizationKey.fromContext(name, context).flatMapLatest { key ->
+            cacheMutex.withLock {
+                cache.getOrPut(key) {
+                    localizationManager.format(name, context)
+                        .shareIn(coroutineScope, SharingStarted.WhileSubscribed(), 1)
+                }
             }
         }
     }
 
-    /**
-     * Convenience overload that collects the formatted [name] using an explicit [context]
-     * and delivers updates to [callback] within this scope's [coroutineScope].
-     *
-     * @param name The message identifier.
-     * @param context The explicit [EvaluationContext] to use for formatting.
-     * @param callback Invoked with every formatted value and subsequent updates.
-     */
-    fun format(name: String, context: EvaluationContext, callback: (String) -> Unit) {
+    fun format(name: String, context: ReactiveEvaluationContext, callback: (String) -> Unit) {
         coroutineScope.launch {
             format(name, context).collect(callback)
         }
     }
 
-    /**
-     * Convenience overload that collects the formatted [name] using an explicit [context]
-     * and assigns each emission to the given mutable [property].
-     *
-     * Collection is performed within this scope's [coroutineScope].
-     *
-     * @param name The message identifier.
-     * @param context The explicit [EvaluationContext] to use for formatting.
-     * @param property A mutable property reference that will receive the latest formatted value.
-     */
-    fun format(name: String, context: EvaluationContext, property: KMutableProperty0<String>) {
+    fun format(name: String, context: ReactiveEvaluationContext, property: KMutableProperty0<String>) {
         coroutineScope.launch {
             format(name, context).collect(property::set)
         }
     }
 
-    /**
-     * Convenience overload that collects the formatted [name] using an explicit [context]
-     * and assigns each emission to the given mutable instance property [property].
-     *
-     * Collection is performed within this scope's [coroutineScope].
-     *
-     * @param name The message identifier.
-     * @param context The explicit [EvaluationContext] to use for formatting.
-     * @param property A mutable instance property reference that will receive the latest formatted value.
-     */
-    context(instance: T) fun <T> format(
-        name: String, context: EvaluationContext, property: KMutableProperty1<T, String>
-    ) {
+    context(instance: T) fun <T> format( // @formatter:off
+        name: String,
+        context: ReactiveEvaluationContext,
+        property: KMutableProperty1<T, String>
+    ) { // @formatter:on
         coroutineScope.launch {
             format(name, context).collect { text ->
                 property.set(instance, text)
@@ -131,39 +99,16 @@ class LocalizationScope( // @formatter:off
         }
     }
 
-    /**
-     * Formats a localized message identified by [name] using a lazily constructed [EvaluationContext].
-     *
-     * The context builder receives the current localization file and is pre-populated by the
-     * manager's [LocalizationManager.globalContextInit]. You can further customize it via [contextInit].
-     *
-     * @param name The message identifier.
-     * @param contextInit Builder to configure the [EvaluationContext]. Optional.
-     * @return A memoized, hot [SharedFlow] that emits the latest formatted value.
-     */
-    suspend inline fun format(
-        name: String, crossinline contextInit: EvaluationContextBuilder.() -> Unit = {}
-    ): SharedFlow<String> {
-        val file = localizationManager.currentLocalizations.value
-        val context = evaluationContext(file) {
-            localizationManager.globalContextInit(this)
-            contextInit()
-        }
-        return format(name, context)
+    suspend inline fun format( // @formatter:off
+        name: String,
+        crossinline contextInit: ReactiveEvaluationContextBuilder.() -> Unit = {}
+    ): Flow<String> { // @formatter:on
+        return format(name, reactiveEvaluationContext(localizationManager.currentLocalizations, contextInit))
     }
 
-    /**
-     * Convenience overload that builds an [EvaluationContext] using [contextInit],
-     * then collects the formatted [name] and passes emissions to [callback].
-     * Collection runs in this scope's [coroutineScope].
-     *
-     * @param name The message identifier.
-     * @param contextInit Optional builder to customize the [EvaluationContext].
-     * @param callback Invoked with every formatted value and subsequent updates.
-     */
     inline fun format(
         name: String,
-        crossinline contextInit: EvaluationContextBuilder.() -> Unit = {},
+        crossinline contextInit: ReactiveEvaluationContextBuilder.() -> Unit = {},
         noinline callback: (String) -> Unit
     ) {
         coroutineScope.launch {
@@ -171,19 +116,9 @@ class LocalizationScope( // @formatter:off
         }
     }
 
-    /**
-     * Convenience overload that builds an [EvaluationContext] using [contextInit],
-     * then collects the formatted [name] and assigns each emission to [property].
-     *
-     * Collection runs in this scope's [coroutineScope].
-     *
-     * @param name The message identifier.
-     * @param contextInit Optional builder to customize the [EvaluationContext].
-     * @param property A mutable property reference that will receive the latest formatted value.
-     */
     inline fun format(
         name: String,
-        crossinline contextInit: EvaluationContextBuilder.() -> Unit = {},
+        crossinline contextInit: ReactiveEvaluationContextBuilder.() -> Unit = {},
         property: KMutableProperty0<String>
     ) {
         coroutineScope.launch {
@@ -191,18 +126,9 @@ class LocalizationScope( // @formatter:off
         }
     }
 
-    /**
-     * Convenience overload that builds an [EvaluationContext] via [contextInit],
-     * then collects the formatted [name] and assigns each emission to the given
-     * mutable instance property [property]. Collection runs in this scope's [coroutineScope].
-     *
-     * @param name The message identifier.
-     * @param contextInit Optional builder to customize the [EvaluationContext].
-     * @param property A mutable instance property reference that will receive the latest formatted value.
-     */
     inline context(instance: T) fun <T> format(
         name: String,
-        crossinline contextInit: EvaluationContextBuilder.() -> Unit = {},
+        crossinline contextInit: ReactiveEvaluationContextBuilder.() -> Unit = {},
         property: KMutableProperty1<T, String>
     ) {
         coroutineScope.launch {
@@ -212,70 +138,36 @@ class LocalizationScope( // @formatter:off
         }
     }
 
-    /**
-     * Formats a specific attribute [attribName] of a localized message [name] using the given [context].
-     *
-     * Behaves like the non-attribute overload but targets a message attribute instead of the
-     * message value. Results are memoized within this scope and exposed as a hot [SharedFlow].
-     *
-     * @param name The message identifier.
-     * @param attribName The attribute name to format (e.g., "title", "label").
-     * @param context An explicit [EvaluationContext] to use for formatting.
-     * @return A [SharedFlow] with a replay of the latest formatted attribute value.
-     */
-    suspend fun format(name: String, attribName: String, context: EvaluationContext): SharedFlow<String> {
-        return cacheMutex.withLock {
-            cache.getOrPut(LocalizationKey.fromContext(name, attribName, context)) {
-                localizationManager.format(name, attribName, context)
-                    .shareIn(coroutineScope, SharingStarted.WhileSubscribed(), 1)
+    suspend fun format(name: String, attribName: String, context: ReactiveEvaluationContext): Flow<String> {
+        return ReactiveLocalizationKey.fromContext(name, attribName, context).flatMapLatest { key ->
+            cacheMutex.withLock {
+                cache.getOrPut(key) {
+                    localizationManager.format(name, attribName, context)
+                        .shareIn(coroutineScope, SharingStarted.WhileSubscribed(), 1)
+                }
             }
         }
     }
 
-    /**
-     * Convenience overload that collects a formatted attribute [attribName] of message [name]
-     * using an explicit [context], delivering updates to [callback] within this scope's [coroutineScope].
-     *
-     * @param name The message identifier.
-     * @param attribName The attribute name to format.
-     * @param context The explicit [EvaluationContext] to use for formatting.
-     * @param callback Invoked with every formatted value and subsequent updates.
-     */
-    fun format(name: String, attribName: String, context: EvaluationContext, callback: (String) -> Unit) {
+    fun format(name: String, attribName: String, context: ReactiveEvaluationContext, callback: (String) -> Unit) {
         coroutineScope.launch {
             format(name, attribName, context).collect(callback)
         }
     }
 
-    /**
-     * Convenience overload that collects a formatted attribute [attribName] of message [name]
-     * using an explicit [context] and assigns each emission to the given mutable [property].
-     *
-     * Collection is performed within this scope's [coroutineScope].
-     *
-     * @param name The message identifier.
-     * @param attribName The attribute name to format.
-     * @param context The explicit [EvaluationContext] to use for formatting.
-     * @param property A mutable property reference that will receive the latest formatted attribute value.
-     */
-    fun format(name: String, attribName: String, context: EvaluationContext, property: KMutableProperty0<String>) {
+    fun format(
+        name: String,
+        attribName: String,
+        context: ReactiveEvaluationContext,
+        property: KMutableProperty0<String>
+    ) {
         coroutineScope.launch {
             format(name, attribName, context).collect(property::set)
         }
     }
 
-    /**
-     * Convenience overload that collects a formatted attribute [attribName] of message [name]
-     * using an explicit [context] and assigns each emission to the given mutable instance
-     * property [property]. Collection is performed within this scope's [coroutineScope].
-     *
-     * @param name The message identifier.
-     * @param attribName The attribute name to format.
-     * @param context The explicit [EvaluationContext] to use for formatting.
-     * @param property A mutable instance property reference that will receive the latest formatted attribute value.
-     */
     context(instance: T) fun <T> format(
-        name: String, attribName: String, context: EvaluationContext, property: KMutableProperty1<T, String>
+        name: String, attribName: String, context: ReactiveEvaluationContext, property: KMutableProperty1<T, String>
     ) {
         coroutineScope.launch {
             format(name, attribName, context).collect { text ->
@@ -284,44 +176,22 @@ class LocalizationScope( // @formatter:off
         }
     }
 
-    /**
-     * Formats an attribute [attribName] of message [name] using a lazily constructed [EvaluationContext].
-     *
-     * The context builder is pre-initialized by the manager's global context setup and can be customized
-     * via [contextInit]. The resulting flow is memoized within this scope and shared among identical calls.
-     *
-     * @param name The message identifier.
-     * @param attribName The attribute name to format.
-     * @param contextInit Optional builder to customize the [EvaluationContext].
-     * @return A hot [SharedFlow] emitting the latest formatted attribute value.
-     */
     suspend inline fun format( // @formatter:off
         name: String,
         attribName: String,
-        crossinline contextInit: EvaluationContextBuilder.() -> Unit = {}
-    ): SharedFlow<String> { // @formatter:on
-        val file = localizationManager.currentLocalizations.value
-        val context = evaluationContext(file) {
-            localizationManager.globalContextInit(this)
-            contextInit()
-        }
-        return format(name, attribName, context)
+        crossinline contextInit: ReactiveEvaluationContextBuilder.() -> Unit = {}
+    ): Flow<String> { // @formatter:on
+        return format(
+            name,
+            attribName,
+            reactiveEvaluationContext(localizationManager.currentLocalizations, contextInit)
+        )
     }
 
-    /**
-     * Convenience overload that builds an [EvaluationContext] via [contextInit] and collects a
-     * formatted attribute [attribName] of message [name], delivering updates to [callback] within
-     * this scope's [coroutineScope].
-     *
-     * @param name The message identifier.
-     * @param attribName The attribute name to format.
-     * @param contextInit Optional builder to customize the [EvaluationContext].
-     * @param callback Invoked with every formatted value and subsequent updates.
-     */
     inline fun format(
         name: String,
         attribName: String,
-        crossinline contextInit: EvaluationContextBuilder.() -> Unit = {},
+        crossinline contextInit: ReactiveEvaluationContextBuilder.() -> Unit = {},
         noinline callback: (String) -> Unit
     ) {
         coroutineScope.launch {
@@ -329,21 +199,10 @@ class LocalizationScope( // @formatter:off
         }
     }
 
-    /**
-     * Convenience overload that builds an [EvaluationContext] via [contextInit] and collects a
-     * formatted attribute [attribName] of message [name], assigning each emission to [property].
-     *
-     * Collection runs in this scope's [coroutineScope].
-     *
-     * @param name The message identifier.
-     * @param attribName The attribute name to format.
-     * @param contextInit Optional builder to customize the [EvaluationContext].
-     * @param property A mutable property reference that will receive the latest formatted attribute value.
-     */
     inline fun format(
         name: String,
         attribName: String,
-        crossinline contextInit: EvaluationContextBuilder.() -> Unit = {},
+        crossinline contextInit: ReactiveEvaluationContextBuilder.() -> Unit = {},
         property: KMutableProperty0<String>
     ) {
         coroutineScope.launch {
@@ -351,20 +210,10 @@ class LocalizationScope( // @formatter:off
         }
     }
 
-    /**
-     * Convenience overload that builds an [EvaluationContext] via [contextInit] and collects a
-     * formatted attribute [attribName] of message [name], assigning each emission to the given
-     * mutable instance property [property]. Collection runs in this scope's [coroutineScope].
-     *
-     * @param name The message identifier.
-     * @param attribName The attribute name to format.
-     * @param contextInit Optional builder to customize the [EvaluationContext].
-     * @param property A mutable instance property reference that will receive the latest formatted attribute value.
-     */
     inline context(instance: T) fun <T> format(
         name: String,
         attribName: String,
-        crossinline contextInit: EvaluationContextBuilder.() -> Unit = {},
+        crossinline contextInit: ReactiveEvaluationContextBuilder.() -> Unit = {},
         property: KMutableProperty1<T, String>
     ) {
         coroutineScope.launch {
