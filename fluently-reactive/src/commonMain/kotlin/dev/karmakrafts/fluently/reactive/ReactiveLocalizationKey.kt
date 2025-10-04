@@ -37,9 +37,7 @@ internal data class ReactiveLocalizationKey( // @formatter:off
         }
 
         fun fromContext(
-            name: String,
-            attribName: String,
-            context: ReactiveEvaluationContext
+            name: String, attribName: String, context: ReactiveEvaluationContext
         ): Flow<ReactiveLocalizationKey> {
             return context.asContextFlow().mapLatest { context ->
                 ReactiveLocalizationKey(name, attribName, context.functions, context.variables)

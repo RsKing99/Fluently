@@ -28,6 +28,15 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.mapLatest
 
+/**
+ * Builder DSL for constructing a ReactiveEvaluationContext.
+ *
+ * This builder mirrors EvaluationContextBuilder but accepts reactive inputs. Use the
+ * various variable helpers to supply static or Flow-based values and [function] to
+ * register Fluent functions. Finally, call [build] (usually via [reactiveEvaluationContext])
+ * to obtain a ReactiveEvaluationContext that can be turned into a Flow of
+ * EvaluationContext snapshots through [ReactiveEvaluationContext.asContextFlow].
+ */
 @OptIn(ExperimentalCoroutinesApi::class)
 class ReactiveEvaluationContextBuilder {
     @PublishedApi
@@ -104,6 +113,13 @@ class ReactiveEvaluationContextBuilder {
         functions[name] = FunctionBuilder(name).apply(block).build()
     }
 
+    /**
+     * Builds a ReactiveEvaluationContext for the provided [file].
+     *
+     * The resulting context can be transformed into a Flow of immutable EvaluationContext
+     * snapshots via [ReactiveEvaluationContext.asContextFlow]. Each emission from [file]
+     * or any declared reactive variable will trigger a new snapshot.
+     */
     fun build(file: Flow<LocalizationFile>): ReactiveEvaluationContext = ReactiveEvaluationContext( // @formatter:off
         file = file,
         functions = functions,
@@ -111,8 +127,21 @@ class ReactiveEvaluationContextBuilder {
     ) // @formatter:on
 }
 
+/**
+ * Specification block (DSL) used by [ReactiveEvaluationContextBuilder].
+ *
+ * This typealias represents the builder lambda that configures reactive variables and
+ * functions before creating a [ReactiveEvaluationContext].
+ */
 typealias ReactiveEvaluationContextSpec = ReactiveEvaluationContextBuilder.() -> Unit
 
+/**
+ * Creates a ReactiveEvaluationContext for the given [file] using a builder [spec].
+ *
+ * This is a convenience for `ReactiveEvaluationContextBuilder().apply(spec).build(file)`.
+ * Typical usage is to bind [file] and variables to reactive sources so evaluations update
+ * automatically when inputs change.
+ */
 inline fun reactiveEvaluationContext( // @formatter:off
     file: Flow<LocalizationFile>,
     spec: ReactiveEvaluationContextSpec
@@ -120,6 +149,14 @@ inline fun reactiveEvaluationContext( // @formatter:off
     return ReactiveEvaluationContextBuilder().apply(spec).build(file)
 }
 
+/**
+ * Converts a non-reactive [EvaluationContext] into a [ReactiveEvaluationContext].
+ *
+ * The returned context wraps the static [EvaluationContext.file] and [EvaluationContext.variables]
+ * into single-emission Flows. This is useful when integrating existing code with reactive APIs.
+ * Note that the resulting flows will not update unless you rebuild the underlying
+ * EvaluationContext and call this function again.
+ */
 fun EvaluationContext.asReactive(): ReactiveEvaluationContext {
     return ReactiveEvaluationContext(flowOf(file), functions, variables.mapValues { (_, value) -> flowOf(value) })
 }

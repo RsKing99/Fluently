@@ -27,12 +27,37 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 
+/**
+ * Reactive wrapper for building EvaluationContext instances as a Flow.
+ *
+ * This type models a context whose constituents can change over time and thus exposes
+ * a Flow<EvaluationContext> via [asContextFlow]. When any of the inputs emit a new value,
+ * a new EvaluationContext is produced that reflects the latest state.
+ *
+ * Typical usage is to bind the [file] and [variables] to reactive data sources (e.g. UI
+ * state or preference flows) so that message evaluation automatically reacts to changes.
+ *
+ * @property file A flow of the current LocalizationFile that supplies messages and terms.
+ *                Each emission triggers recomputation of the resulting EvaluationContext.
+ * @property functions A static map of available functions by name to be included in each context.
+ * @property variables Reactive variables available to expressions, provided as a map from name
+ *                     to a Flow of Expr values. All variable flows are combined so that any
+ *                     emission from any variable recomputes the context with the latest values.
+ */
 @OptIn(ExperimentalCoroutinesApi::class)
 data class ReactiveEvaluationContext( // @formatter:off
     val file: Flow<LocalizationFile>,
     val functions: Map<String, Function>,
     val variables: Map<String, Flow<Expr>>
 ) { // @formatter:on
+    /**
+     * Produces a Flow of immutable EvaluationContext snapshots based on the latest inputs.
+     *
+     * Behavior:
+     * - When there are no [variables], the result simply maps [file] to an EvaluationContext.
+     * - Otherwise it combines all variable flows; any variable emission recomputes the context.
+     * - The [functions] map is reused for every context emission.
+     */
     fun asContextFlow(): Flow<EvaluationContext> {
         return file.flatMapLatest { file ->
             val variableValues = variables.values.toList()
