@@ -66,7 +66,8 @@
                                 }
                             }
                         }
-                    }
+                    },
+                    "required": ["display_name", "path"]
                 }
             }
         },
