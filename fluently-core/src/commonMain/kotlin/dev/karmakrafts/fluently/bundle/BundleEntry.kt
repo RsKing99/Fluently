@@ -31,10 +31,12 @@ import kotlinx.serialization.Serializable
  * @property displayName A friendly name for the locale suitable for display in UI.
  * @property path Relative or absolute path to the Fluent resource file for this locale.
  * @property defaults A map of variable name to default value injected into the evaluation context when loading.
+ * @property aliases A list of alternative locale's under which this localization file may be referenced.
  */
 @Serializable
 data class BundleEntry(
     @SerialName("display_name") val displayName: String,
     val path: String,
-    val defaults: Map<String, DefaultValue> = emptyMap()
+    val defaults: Map<String, DefaultValue> = emptyMap(),
+    val aliases: List<String> = emptyList()
 )

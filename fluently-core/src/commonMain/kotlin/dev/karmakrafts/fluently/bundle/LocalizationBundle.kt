@@ -83,11 +83,44 @@ data class LocalizationBundle private constructor( // @formatter:off
     fun getLocaleName(locale: String): String = entries[locale]?.displayName ?: locale
 
     /**
+     * Attempts to find the closest matching locale defined by this bundle
+     * based on the given locale.
+     * This will perform a lookup over all entries, and if no match is found,
+     * the aliases of each entry will be sequentially checked to find a possible
+     * match.
+     *
+     * @param locale The requested locale.
+     * @return The locale closest to the requested one based on this
+     *  bundle's entries or null if no matching locale could be found.
+     */
+    fun findClosestLocale(locale: String): String? {
+        if (entries[locale] != null) return locale // Fast path, we don't need to look at aliases
+        for ((closestLocale, entry) in entries) {
+            if (locale !in entry.aliases) continue
+            return closestLocale
+        }
+        return null
+    }
+
+    /**
+     * Attempt to find the closes matching bundle entry for the given locale.
+     * See [findClosestLocale] for details on the behaviour.
+     *
+     * @param locale The locale for which to retrieve the closest bundle entry.
+     * @return The closest matching bundle entry for the given locale or null
+     *  if no matching entry could be found.
+     */
+    fun findClosestEntry(locale: String): BundleEntry? {
+        val closestLocale = findClosestLocale(locale) ?: return null
+        return entries[closestLocale]
+    }
+
+    /**
      * Loads and parses the Fluent resource for [locale] into a [LocalizationFile].
      *
      * The [resourceProvider] is responsible for returning a [Source] for the file path declared by the
      * matching [BundleEntry]. The optional [globalContextInit] can seed the evaluation context with variables
-     * and functions; defaults from the bundle entry are applied afterward via [BundleEntry.applyDefaults].
+     * and functions.
      *
      * @param locale The locale code to load.
      * @param globalContextInit Optional initializer for the evaluation context builder.
@@ -100,7 +133,11 @@ data class LocalizationBundle private constructor( // @formatter:off
         resourceProvider: (String) -> Source,
         crossinline globalContextInit: EvaluationContextBuilder.() -> Unit = {}
     ): LocalizationFile {
-        val entry = entries[locale] ?: entries[defaultLocale] ?: error("Could not load language $locale")
+        // @formatter:off
+        val entry = findClosestEntry(locale)
+            ?: findClosestEntry(defaultLocale)
+            ?: error("Could not load language $locale")
+        // @formatter:on
         return resourceProvider(entry.path).use { source ->
             LocalizationFile.parse(source) {
                 globalContextInit()
@@ -115,8 +152,7 @@ data class LocalizationBundle private constructor( // @formatter:off
      *
      * This is a convenience wrapper around [loadLocale] that delegates to it with
      * [defaultLocale]. Any variables or functions provided by [globalContextInit]
-     * are added to the evaluation context before the entry's default values are applied
-     * via [BundleEntry.applyDefaults].
+     * are added to the evaluation context before the entry's default values are applied.
      *
      * @param globalContextInit Optional initializer for the evaluation context builder.
      * It can be used to register global variables and functions available to all messages.

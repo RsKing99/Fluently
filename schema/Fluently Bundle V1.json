@@ -1,0 +1,110 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "Fluently Bundle V1",
+    "type": "object",
+    "properties": {
+        "version": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "The Fluently bundle config version."
+        },
+        "default_locale": {
+            "type": "string",
+            "description": "The default locale used as a fallback."
+        },
+        "entries": {
+            "type": "object",
+            "description": "A list of all locales supported by this bundle.",
+            "patternProperties": {
+                ".*": {
+                    "type": "object",
+                    "properties": {
+                        "display_name": {
+                            "type": "string",
+                            "description": "The display name of this localization as visible in the UI."
+                        },
+                        "path": {
+                            "type": "string",
+                            "description": "The path to this localization's Fluent file relative to this bundle config."
+                        },
+                        "aliases": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            },
+                            "description": "All alternative locales which should be mapped to this localization entry."
+                        },
+                        "defaults": {
+                            "type": "object",
+                            "description": "A list of all global defaults applied to every locale in this bundle.",
+                            "patternProperties": {
+                                ".*": {
+                                    "type": "object",
+                                    "properties": {
+                                        "type": {
+                                            "type": "string",
+                                            "enum": [
+                                                "string",
+                                                "number",
+                                                "bool"
+                                            ],
+                                            "description": "The type of the variable exported into this entry's Fluent file"
+                                        },
+                                        "value": {
+                                            "type": [
+                                                "string",
+                                                "number",
+                                                "boolean"
+                                            ],
+                                            "description": "The value exported into this entry's Fluent file."
+                                        }
+                                    },
+                                    "required": [
+                                        "type",
+                                        "value"
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "defaults": {
+            "type": "object",
+            "description": "A list of all global defaults applied to every locale in this bundle.",
+            "patternProperties": {
+                ".*": {
+                    "type": "object",
+                    "properties": {
+                        "type": {
+                            "type": "string",
+                            "enum": [
+                                "string",
+                                "number",
+                                "bool"
+                            ],
+                            "description": "The type of the variable exported into all Fluent files."
+                        },
+                        "value": {
+                            "type": [
+                                "string",
+                                "number",
+                                "boolean"
+                            ],
+                            "description": "The value exported into all Fluent files."
+                        }
+                    },
+                    "required": [
+                        "type",
+                        "value"
+                    ]
+                }
+            }
+        }
+    },
+    "required": [
+        "version",
+        "default_locale"
+    ]
+}

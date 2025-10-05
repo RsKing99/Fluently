@@ -1,4 +1,5 @@
 {
+    "$schema": "../schema/Fluently Bundle V1.json",
     // Fluently bundle config version 1 is currently being used, might be used for migrations later
     "version": 1,
     // The default locale used for fallback resolution as BCP‑47 code
@@ -20,6 +21,7 @@
             }
         },
         "de-DE": {
+            "aliases": ["de-AT"],
             "display_name": "Deutsch",
             "path": "de_de.ftl",
             "defaults": {
@@ -28,16 +30,12 @@
                     "value": "Deutsch"
                 }
             }
-        },
-        "de-AT": {
-            "display_name": "Deutsch",
-            "path": "de_de.ftl",
-            "defaults": {
-                "lang_name": {
-                    "type": "string",
-                    "value": "Deutsch"
-                }
-            }
+        }
+    },
+    "defaults": {
+        "testing": {
+            "type": "bool",
+            "value": true
         }
     }
 }

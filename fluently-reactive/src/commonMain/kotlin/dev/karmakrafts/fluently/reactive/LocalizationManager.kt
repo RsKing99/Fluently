@@ -30,6 +30,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.shareIn
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.io.Source
 import kotlin.coroutines.CoroutineContext
@@ -89,11 +90,11 @@ class LocalizationManager( // @formatter:off
      * Hot state flow with the [LocalizationFile] for the current [locale]. When the locale equals
      * the default, this simply points to [defaultLocalizations].
      */
-    val currentLocalizations: SharedFlow<LocalizationFile> =
+    val currentLocalizations: StateFlow<LocalizationFile> =
         locale.combine(defaultLocalizations) { locale, defaultLocalizations ->
             if (locale == bundle.defaultLocale) defaultLocalizations
             else bundle.loadLocale(locale, resourceProvider, globalContextInit)
-        }.shareIn(coroutineScope, SharingStarted.Eagerly, 1)
+        }.stateIn(coroutineScope, SharingStarted.Eagerly, _defaultLocalizations.value)
 
     private fun loadDefaultLocale(): LocalizationFile = bundle.loadDefaultLocale(resourceProvider, globalContextInit)
 
