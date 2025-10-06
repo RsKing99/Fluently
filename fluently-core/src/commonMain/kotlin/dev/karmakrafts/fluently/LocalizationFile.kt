@@ -55,6 +55,8 @@ data class LocalizationFile private constructor( // @formatter:off
     @PublishedApi internal val globalContextInit: EvaluationContextBuilder.() -> Unit
 ) { // @formatter:on
     companion object {
+        val empty: LocalizationFile = fromMessages(emptyMap())
+
         /**
          * Constructs a localization file from an existing [messages] map.
          *

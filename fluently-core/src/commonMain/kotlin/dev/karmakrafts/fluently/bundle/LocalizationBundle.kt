@@ -147,6 +147,26 @@ data class LocalizationBundle private constructor( // @formatter:off
         }
     }
 
+    /** Same as [loadLocale] but wires through resource provider suspension */
+    suspend inline fun loadLocaleSuspend(
+        locale: String,
+        resourceProvider: suspend (String) -> Source,
+        crossinline globalContextInit: EvaluationContextBuilder.() -> Unit = {}
+    ): LocalizationFile {
+        // @formatter:off
+        val entry = findClosestEntry(locale)
+            ?: findClosestEntry(defaultLocale)
+            ?: error("Could not load language $locale")
+        // @formatter:on
+        return resourceProvider(entry.path).use { source ->
+            LocalizationFile.parse(source) {
+                globalContextInit()
+                variables(defaults.mapValues { (_, default) -> default.asExpr() })
+                variables(entry.defaults.mapValues { (_, default) -> default.asExpr() })
+            }
+        }
+    }
+
     /**
      * Loads and parses the Fluent resource for the bundle's [defaultLocale].
      *
@@ -166,6 +186,14 @@ data class LocalizationBundle private constructor( // @formatter:off
         crossinline globalContextInit: EvaluationContextBuilder.() -> Unit = {}
     ): LocalizationFile { // @formatter:on
         return loadLocale(defaultLocale, resourceProvider, globalContextInit)
+    }
+
+    /** Same as [loadDefaultLocale] but wires through resource provider suspension */
+    suspend inline fun loadDefaultLocaleSuspend( // @formatter:off
+        resourceProvider: suspend (String) -> Source,
+        crossinline globalContextInit: EvaluationContextBuilder.() -> Unit = {}
+    ): LocalizationFile { // @formatter:on
+        return loadLocaleSuspend(defaultLocale, resourceProvider, globalContextInit)
     }
 
     /** Serializes this bundle to a compact JSON string. */

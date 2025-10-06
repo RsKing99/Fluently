@@ -41,3 +41,4 @@ dependencyResolutionManagement {
 include("fluently-frontend")
 include("fluently-core")
 include("fluently-reactive")
+include("fluently-gradle-plugin")
