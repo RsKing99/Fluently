@@ -19,6 +19,8 @@ package dev.karmakrafts.fluently.reactive
 import dev.karmakrafts.fluently.bundle.LocalizationBundle
 import dev.karmakrafts.fluently.bundle.fromResource
 import dev.karmakrafts.fluently.eval.EvaluationContextBuilder
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.io.asSource
 import kotlinx.io.buffered
 import kotlin.coroutines.CoroutineContext
@@ -45,7 +47,7 @@ import kotlin.coroutines.CoroutineContext
  *  exist within the current classpath.
  */
 fun LocalizationManager.Companion.fromResources(
-    bundle: LocalizationBundle,
+    bundle: Flow<LocalizationBundle>,
     coroutineContext: CoroutineContext,
     globalContextInit: EvaluationContextBuilder.() -> Unit = {}
 ): LocalizationManager = LocalizationManager(bundle, { path ->
@@ -82,7 +84,7 @@ fun LocalizationManager.Companion.fromResources( // @formatter:off
     globalContextInit: EvaluationContextBuilder.() -> Unit = {}
 ): LocalizationManager { // @formatter:on
     val bundle = LocalizationBundle.fromResource("$basePath/languages.json")
-    return LocalizationManager(bundle, { path ->
+    return LocalizationManager(flowOf(bundle), { path ->
         this::class.java.getResourceAsStream("$basePath/$path")!!.asSource().buffered()
     }, coroutineContext, globalContextInit)
 }

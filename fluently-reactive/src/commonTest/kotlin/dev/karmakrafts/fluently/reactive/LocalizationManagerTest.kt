@@ -21,6 +21,7 @@ import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.test.runTest
 import kotlinx.io.Buffer
@@ -48,7 +49,7 @@ class LocalizationManagerTest {
         """.trimIndent()
     )
 
-    private fun testSource(source: (String) -> String): (String) -> Source = { locale ->
+    private fun testSource(source: (String) -> String): suspend (String) -> Source = { locale ->
         Buffer().apply {
             writeString(source(locale))
         }
@@ -56,7 +57,7 @@ class LocalizationManagerTest {
 
     @Test
     fun `Format message using default locale`() = runTest {
-        val manager = LocalizationManager(bundle, testSource {
+        val manager = LocalizationManager(flowOf(bundle), testSource {
             """
                 my-entry = Hello, World!
             """.trimIndent()
@@ -68,7 +69,7 @@ class LocalizationManagerTest {
 
     @Test
     fun `Format message using current locale`() = runTest {
-        val manager = LocalizationManager(bundle, testSource { locale ->
+        val manager = LocalizationManager(flowOf(bundle), testSource { locale ->
             if (locale == "en_us.ftl") {
                 return@testSource $$"""
                     my-entry = Hello, {$myValue}!

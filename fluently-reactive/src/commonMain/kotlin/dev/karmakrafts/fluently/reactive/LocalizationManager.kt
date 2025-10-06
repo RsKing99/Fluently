@@ -26,8 +26,10 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.flow.update
@@ -55,12 +57,19 @@ import kotlin.coroutines.CoroutineContext
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 class LocalizationManager( // @formatter:off
-    val bundle: LocalizationBundle,
+    val bundle: Flow<LocalizationBundle>,
     val resourceProvider: suspend (String) -> Source,
     val coroutineContext: CoroutineContext,
     val globalContextInit: EvaluationContextBuilder.() -> Unit = {}
 ) { // @formatter:on
-    companion object // For injecting extensions
+    companion object; // For injecting extensions
+
+    constructor(
+        bundle: LocalizationBundle,
+        resourceProvider: suspend (String) -> Source,
+        coroutineContext: CoroutineContext,
+        globalContextInit: EvaluationContextBuilder.() -> Unit = {}
+    ) : this(flowOf(bundle), resourceProvider, coroutineContext, globalContextInit)
 
     @PublishedApi
     internal val coroutineScope: CoroutineScope = CoroutineScope(coroutineContext)
@@ -69,40 +78,37 @@ class LocalizationManager( // @formatter:off
      * All locales available in the [bundle]. The default locale is accessible via
      * [LocalizationBundle.defaultLocale].
      */
-    inline val locales: Set<String> get() = bundle.locales
+    val locales: SharedFlow<Set<String>> =
+        bundle.mapLatest { bundle -> bundle.locales }.shareIn(coroutineScope, SharingStarted.Eagerly, 1)
 
     /**
      * Currently selected UI locale as a [MutableStateFlow]. Updating the value triggers reloading
      * of [currentLocalizations]. Initialized with [LocalizationBundle.defaultLocale].
      */
-    val locale: MutableStateFlow<String> = MutableStateFlow(bundle.defaultLocale)
-
-    @PublishedApi
-    internal val _defaultLocalizations: MutableStateFlow<LocalizationFile> =
-        MutableStateFlow(LocalizationFile.empty).apply {
-            coroutineScope.launch {
-                value = loadDefaultLocale()
-            }
+    val locale: MutableStateFlow<String?> = MutableStateFlow<String?>(null).apply {
+        coroutineScope.launch {
+            // Update locale from first bundle default locale
+            value = bundle.first().defaultLocale
         }
+    }
 
     /**
      * Hot state flow with the default-locale [LocalizationFile]. This is always kept loaded and is
      * used as a fallback for missing messages in the current locale.
      */
-    inline val defaultLocalizations: StateFlow<LocalizationFile> get() = _defaultLocalizations
+    val defaultLocalizations: SharedFlow<LocalizationFile> = bundle.mapLatest { bundle ->
+        bundle.loadDefaultLocaleSuspend(resourceProvider, globalContextInit)
+    }.shareIn(coroutineScope, SharingStarted.Eagerly, 1)
 
     /**
      * Hot state flow with the [LocalizationFile] for the current [locale]. When the locale equals
      * the default, this simply points to [defaultLocalizations].
      */
     val currentLocalizations: SharedFlow<LocalizationFile> =
-        locale.combine(defaultLocalizations) { locale, defaultLocalizations ->
+        combine(locale.filterNotNull(), defaultLocalizations, bundle) { locale, defaultLocalizations, bundle ->
             if (locale == bundle.defaultLocale) defaultLocalizations
             else bundle.loadLocaleSuspend(locale, resourceProvider, globalContextInit)
         }.shareIn(coroutineScope, SharingStarted.Eagerly, 1)
-
-    private suspend fun loadDefaultLocale(): LocalizationFile =
-        bundle.loadDefaultLocaleSuspend(resourceProvider, globalContextInit)
 
     /**
      * Formats a message by [name] using the given evaluation [context].
@@ -201,11 +207,6 @@ class LocalizationManager( // @formatter:off
      * current locale file if needed.
      */
     fun reload() {
-        coroutineScope.launch {
-            // Reload the default localization file
-            _defaultLocalizations.value = loadDefaultLocale()
-            // Re-emit current locale to reload current localization file
-            locale.update { it }
-        }
+        locale.update { it }
     }
 }
