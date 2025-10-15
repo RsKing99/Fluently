@@ -42,31 +42,43 @@ entry:
     | COMMENT
     ;
 
+/*
+ * Modification 09/10/2025: Remove the requirement for superfluous equal sign after an identifier
+ *  Fix for https://github.com/projectfluent/fluent/issues/190
+ */
 term:
     MINUS
     IDENT
-    EQ // After this whitespace counts
+    (EQ // After this whitespace counts
     BLANK_INLINE?
     pattern
-    attribute*
+    attribute*)?
     ;
 
+/*
+ * Modification 09/10/2025: Remove the requirement for superfluous equal sign after an identifier
+ *  Fix for https://github.com/projectfluent/fluent/issues/190
+ */
 message:
     IDENT
-    EQ // After this whitespace counts
+    (EQ // After this whitespace counts
     BLANK_INLINE?
     ((pattern
     attribute*)
-    | (attribute+))
+    | (attribute+)))?
     ;
 
+/*
+ * Modification 09/10/2025: Remove the requirement for superfluous equal sign after an identifier
+ *  Fix for https://github.com/projectfluent/fluent/issues/190
+ */
 attribute:
     NL
     DOT
     IDENT
-    EQ // After this whitespace counts
+    (EQ // After this whitespace counts
     BLANK_INLINE?
-    pattern
+    pattern)?
     ;
 
 pattern:
@@ -169,11 +181,14 @@ argument:
     | inlineExpression
     ;
 
+/*
+ * Modification 08/10/2025: Make named arguments accept inlineExpression instead of only literals
+ *  Fix for https://github.com/projectfluent/fluent/issues/230
+ */
 namedArgument:
     IDENT
     COLON
-    (stringLiteral
-    | numberLiteral)
+    inlineExpression
     ;
 
 numberLiteral:
@@ -202,6 +217,10 @@ inlinePlaceable:
     R_BRACE
     ;
 
+/*
+ * Modification 27/09/2025: Make inlineText match BLANK_INLINEs
+ *  Fix a grammar discrepancy due to the different lexing approach
+ */
 inlineText:
     (BLANK_INLINE
     | TEXT_CHAR)+
