@@ -17,13 +17,16 @@
 package dev.karmakrafts.fluently.expr
 
 import dev.karmakrafts.fluently.eval.EvaluationContext
+import dev.karmakrafts.fluently.util.TokenRange
 
 /**
  * A numeric literal expression.
  *
  * @property value The numeric value as parsed; may be an integer or floating-point number.
  */
-data class NumberLiteral(val value: Number) : Expr {
+data class NumberLiteral(
+    override val tokenRange: TokenRange, val value: Number
+) : Expr {
     /** True if [value] is a floating-point number. */
     inline val isDouble: Boolean
         get() = value is Double
@@ -37,3 +40,5 @@ data class NumberLiteral(val value: Number) : Expr {
         else value.toLong().toString()
     }
 }
+
+fun ExprScope.number(value: Number): NumberLiteral = NumberLiteral(TokenRange.synthetic, value)

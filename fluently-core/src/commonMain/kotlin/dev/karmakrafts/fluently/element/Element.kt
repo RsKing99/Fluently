@@ -17,12 +17,20 @@
 package dev.karmakrafts.fluently.element
 
 import dev.karmakrafts.fluently.eval.Evaluable
+import dev.karmakrafts.fluently.util.TokenRangeProvider
 
 /**
- * A building block of a Fluent pattern that can be evaluated to a string.
- *
- * Pattern elements are the mix of plain text and inline expressions that compose
- * the value of messages, terms, and attributes. The evaluation contract is inherited
- * from [Evaluable] and must be pure with respect to the provided evaluation context.
+ * Base type for all traversable parts of a Fluent element tree.
  */
-interface PatternElement : Element
+interface Element : Evaluable, TokenRangeProvider {
+    /**
+     * Reduces this element by traversing the underlying element tree
+     * and aggregating the result using the given [ElementReducer] instance.
+     *
+     * @param R The type of the value produced by reducing this element
+     *  using the given [ElementReducer].
+     * @param reducer The [ElementReducer] instance which to apply to this element.
+     * @return A value aggregated by the given [ElementReducer] instance.
+     */
+    fun <R> accept(reducer: ElementReducer<R>): R = reducer.visitElement(this)
+}

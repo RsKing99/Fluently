@@ -19,6 +19,7 @@ package dev.karmakrafts.fluently.entry
 import dev.karmakrafts.fluently.element.Attribute
 import dev.karmakrafts.fluently.element.PatternElement
 import dev.karmakrafts.fluently.eval.EvaluationContext
+import dev.karmakrafts.fluently.util.TokenRange
 
 /**
  * A public, addressable Fluent message entry.
@@ -33,6 +34,7 @@ import dev.karmakrafts.fluently.eval.EvaluationContext
  * @property attributes Named attributes available on this message; empty if none.
  */
 data class Message(
+    override val tokenRange: TokenRange,
     override val name: String,
     override val elements: List<PatternElement>,
     override val attributes: Map<String, Attribute>

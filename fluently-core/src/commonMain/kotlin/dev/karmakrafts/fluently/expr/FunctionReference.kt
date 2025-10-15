@@ -17,6 +17,8 @@
 package dev.karmakrafts.fluently.expr
 
 import dev.karmakrafts.fluently.eval.EvaluationContext
+import dev.karmakrafts.fluently.eval.FluentlyEvaluationException
+import dev.karmakrafts.fluently.util.TokenRange
 
 /**
  * Reference to a built-in or user-defined function call in an expression.
@@ -32,14 +34,24 @@ import dev.karmakrafts.fluently.eval.EvaluationContext
  * @property name The function identifier to invoke.
  * @property arguments The ordered list of call arguments; each pair is (parameterName?, valueExpr).
  */
-data class FunctionReference(val name: String, val arguments: List<Pair<String?, Expr>>) : Expr {
+data class FunctionReference( // @formatter:off
+    override val tokenRange: TokenRange,
+    val name: String,
+    val arguments: List<Pair<String?, Expr>>
+) : Expr { // @formatter:on
     override fun getType(context: EvaluationContext): ExprType {
-        val function = context.functions[name] ?: error("No function named '$name'")
+        val function = context.functions[name] ?: throw FluentlyEvaluationException( // @formatter:off
+            message = "No function named '$name'",
+            tokenRange = tokenRange
+        ) // @formatter:on
         return function.returnType
     }
 
     override fun evaluate(context: EvaluationContext): String {
-        val function = context.functions[name] ?: error("No function named '$name'")
+        val function = context.functions[name] ?: throw FluentlyEvaluationException( // @formatter:off
+            message = "No function named '$name'",
+            tokenRange = tokenRange
+        ) // @formatter:on
         val parameters = function.parameters
         val arguments = HashMap<String, Expr>()
         var currentArgIndex = 0
@@ -47,19 +59,42 @@ data class FunctionReference(val name: String, val arguments: List<Pair<String?,
             val (name, value) = this.arguments[argumentIndex]
             val valueType = value.getType(context)
             if (name != null) {
-                val parameter = parameters.first { (paramName, _) -> paramName == name }
+                val parameter =
+                    parameters.find { (paramName, _) -> paramName == name } ?: throw FluentlyEvaluationException(
+                        message = "No parameter named '$name' in call to function ${this.name}", tokenRange = tokenRange
+                    )
                 val (_, paramType) = parameter
-                check(valueType == paramType) { "Expected argument of type $paramType for '$name' but got $valueType" }
+                if (valueType != paramType) {
+                    throw FluentlyEvaluationException(
+                        message = "Expected argument of type $paramType for '$name' but got $valueType",
+                        tokenRange = tokenRange
+                    )
+                }
                 arguments[name] = value
                 currentArgIndex = parameters.indexOf(parameter) + 1
                 continue
             }
-            val (paramName, paramType) = parameters.getOrNull(currentArgIndex)
-                ?: error("Could not match parameter $currentArgIndex for function ${this.name}")
-            check(valueType == paramType) { "Expected argument of type $paramType for '$name' but got $valueType" }
+            val (paramName, paramType) = parameters.getOrNull(currentArgIndex) ?: throw FluentlyEvaluationException(
+                message = "Could not match parameter $currentArgIndex for function ${this.name}",
+                tokenRange = tokenRange
+            )
+            if (valueType != paramType) {
+                throw FluentlyEvaluationException(
+                    message = "Expected argument of type $paramType for '$name' but got $valueType",
+                    tokenRange = tokenRange
+                )
+            }
             arguments[paramName] = value
             currentArgIndex++
         }
-        return context.functions[name]?.callback?.invoke(context, arguments)?.evaluate(context) ?: "<missing:${name}()>"
+        return context.functions[name]?.callback?.invoke(DefaultExprScope, context, arguments)?.evaluate(context)
+            ?: "<missing:${name}()>"
     }
 }
+
+fun ExprScope.functionReference(name: String, arguments: List<Pair<String?, Expr>>): FunctionReference =
+    FunctionReference( // @formatter:off
+        tokenRange = TokenRange.synthetic,
+        name = name,
+        arguments = arguments
+    ) // @formatter:on

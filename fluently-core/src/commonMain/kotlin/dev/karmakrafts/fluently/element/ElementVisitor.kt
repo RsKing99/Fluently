@@ -16,13 +16,15 @@
 
 package dev.karmakrafts.fluently.element
 
-import dev.karmakrafts.fluently.eval.Evaluable
-
 /**
- * A building block of a Fluent pattern that can be evaluated to a string.
+ * A convenience base class for traversing Fluent AST elements when you only need side effects.
  *
- * Pattern elements are the mix of plain text and inline expressions that compose
- * the value of messages, terms, and attributes. The evaluation contract is inherited
- * from [Evaluable] and must be pure with respect to the provided evaluation context.
+ * This class specializes [ElementReducer] with a `Unit` result type and provides
+ * no-op defaults for aggregation.
+ *
+ * @see ElementReducer
  */
-interface PatternElement : Element
+abstract class ElementVisitor : ElementReducer<Unit> {
+    override fun createDefaultValue() = Unit
+    override fun aggregate(aggregate: Unit, value: Unit) = Unit
+}

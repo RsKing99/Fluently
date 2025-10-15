@@ -17,6 +17,7 @@
 package dev.karmakrafts.fluently.entry
 
 import dev.karmakrafts.fluently.element.Attribute
+import dev.karmakrafts.fluently.element.Element
 import dev.karmakrafts.fluently.element.PatternElement
 import dev.karmakrafts.fluently.eval.Evaluable
 import dev.karmakrafts.fluently.eval.EvaluationContext
@@ -33,7 +34,7 @@ import dev.karmakrafts.fluently.util.Named
  * The interface extends [Evaluable] and [Named] so entries can be formatted and participate in
  * cycle detection during evaluation.
  */
-sealed interface LocalizationEntry : Evaluable, Named {
+sealed interface LocalizationEntry : Element, Named {
     /** The identifier of this entry (message or term). */
     override val name: String
 

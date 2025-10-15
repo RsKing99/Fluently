@@ -19,6 +19,7 @@ package dev.karmakrafts.fluently.entry
 import dev.karmakrafts.fluently.element.Attribute
 import dev.karmakrafts.fluently.element.PatternElement
 import dev.karmakrafts.fluently.eval.EvaluationContext
+import dev.karmakrafts.fluently.util.TokenRange
 
 /**
  * A private reusable Fluent term entry (identifier starts with a dash in source).
@@ -34,11 +35,15 @@ import dev.karmakrafts.fluently.eval.EvaluationContext
  * @property attributes Named attributes available on this term; empty if none.
  */
 data class Term(
+    override val tokenRange: TokenRange,
     override val name: String,
     override val elements: List<PatternElement>,
     override val attributes: Map<String, Attribute>
 ) : LocalizationEntry {
     override fun evaluate(context: EvaluationContext): String {
-        error("Terms cannot be evaluated at runtime")
+        context.pushParent(this)
+        val result = super.evaluate(context)
+        context.popParent()
+        return result
     }
 }

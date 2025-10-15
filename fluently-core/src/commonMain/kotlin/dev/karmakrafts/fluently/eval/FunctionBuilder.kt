@@ -16,8 +16,10 @@
 
 package dev.karmakrafts.fluently.eval
 
+import dev.karmakrafts.fluently.expr.DefaultExprScope
+import dev.karmakrafts.fluently.expr.ExprScope
 import dev.karmakrafts.fluently.expr.ExprType
-import dev.karmakrafts.fluently.expr.StringLiteral
+import dev.karmakrafts.fluently.expr.string
 
 /**
  * DSL builder for declaring a [Function].
@@ -25,11 +27,11 @@ import dev.karmakrafts.fluently.expr.StringLiteral
  * Instances are created by [EvaluationContextBuilder.function] and configured by setting [returnType],
  * adding [parameter]s, and providing an [action] (the callback body).
  */
-class FunctionBuilder(private val name: String) {
+class FunctionBuilder(private val name: String) : ExprScope by DefaultExprScope {
     /** The function's static return type. Defaults to [ExprType.STRING]. */
     var returnType: ExprType = ExprType.STRING
     private val parameters: ArrayList<Pair<String, ExprType>> = ArrayList()
-    internal var callback: FunctionCallback = { _, _ -> StringLiteral("") }
+    internal var callback: FunctionCallback = { _, _ -> string("") }
 
     /** Adds a parameter with [name] and expected [type]. */
     fun parameter(name: String, type: ExprType) {

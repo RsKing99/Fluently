@@ -26,7 +26,7 @@ import dev.karmakrafts.fluently.eval.EvaluationContext
  * and can be evaluated through [PatternElement.evaluate]. Some higher-level nodes produced by parsing
  * may not be directly evaluable or typable until they are lowered (see [TermReference] for example).
  */
-interface Expr : PatternElement {
+sealed interface Expr : PatternElement {
     /**
      * Returns the static type of this expression under the provided [context].
      *

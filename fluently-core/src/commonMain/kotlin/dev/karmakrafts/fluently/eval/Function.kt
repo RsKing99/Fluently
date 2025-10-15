@@ -17,6 +17,7 @@
 package dev.karmakrafts.fluently.eval
 
 import dev.karmakrafts.fluently.expr.Expr
+import dev.karmakrafts.fluently.expr.ExprScope
 import dev.karmakrafts.fluently.expr.ExprType
 
 /**
@@ -25,7 +26,7 @@ import dev.karmakrafts.fluently.expr.ExprType
  * It receives the current [EvaluationContext] and a map of evaluated argument expressions by
  * parameter name, and must return an [Expr] whose value will be evaluated by the caller.
  */
-typealias FunctionCallback = (ctx: EvaluationContext, args: Map<String, Expr>) -> Expr
+typealias FunctionCallback = ExprScope.(ctx: EvaluationContext, args: Map<String, Expr>) -> Expr
 
 /**
  * A callable function available to expressions during evaluation.

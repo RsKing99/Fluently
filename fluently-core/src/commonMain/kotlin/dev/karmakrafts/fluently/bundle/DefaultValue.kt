@@ -18,8 +18,9 @@ package dev.karmakrafts.fluently.bundle
 
 import dev.karmakrafts.fluently.eval.EvaluationContextBuilder
 import dev.karmakrafts.fluently.expr.Expr
-import dev.karmakrafts.fluently.expr.NumberLiteral
-import dev.karmakrafts.fluently.expr.StringLiteral
+import dev.karmakrafts.fluently.expr.ExprScope
+import dev.karmakrafts.fluently.expr.number
+import dev.karmakrafts.fluently.expr.string
 import kotlinx.serialization.Polymorphic
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -41,31 +42,31 @@ sealed interface DefaultValue {
     @SerialName("string")
     @Serializable
     data class StringValue(val value: String) : DefaultValue {
-        override fun asExpr(): Expr = StringLiteral(value)
+        override context(scope: ExprScope) fun asExpr(): Expr = scope.string(value)
     }
 
     /** A long (integral) default value injected under a given variable name. */
     @SerialName("long")
     @Serializable
     data class LongValue(val value: Long) : DefaultValue {
-        override fun asExpr(): Expr = NumberLiteral(value)
+        override context(scope: ExprScope) fun asExpr(): Expr = scope.number(value)
     }
 
     /** A double (floating‑point) default value injected under a given variable name. */
     @SerialName("double")
     @Serializable
     data class DoubleValue(val value: Double) : DefaultValue {
-        override fun asExpr(): Expr = NumberLiteral(value)
+        override context(scope: ExprScope) fun asExpr(): Expr = scope.number(value)
     }
 
     /** A boolean default value injected under a given variable name. */
     @SerialName("bool")
     @Serializable
     data class BoolValue(val value: Boolean) : DefaultValue {
-        override fun asExpr(): Expr = StringLiteral(value.toString())
+        override context(scope: ExprScope) fun asExpr(): Expr = scope.string(value.toString())
     }
 
-    fun asExpr(): Expr
+    context(scope: ExprScope) fun asExpr(): Expr
 }
 
 /** Serializer module registering all [DefaultValue] implementations for polymorphic JSON. */

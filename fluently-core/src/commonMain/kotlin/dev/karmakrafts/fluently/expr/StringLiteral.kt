@@ -17,9 +17,16 @@
 package dev.karmakrafts.fluently.expr
 
 import dev.karmakrafts.fluently.eval.EvaluationContext
+import dev.karmakrafts.fluently.util.TokenRange
 
 /** A string literal expression. */
-data class StringLiteral(val value: String) : Expr {
+data class StringLiteral(
+    override val tokenRange: TokenRange, val value: String
+) : Expr {
     override fun getType(context: EvaluationContext): ExprType = ExprType.STRING
     override fun evaluate(context: EvaluationContext): String = value
 }
+
+fun ExprScope.string(value: String): StringLiteral = StringLiteral(
+    tokenRange = TokenRange.synthetic, value = value
+)

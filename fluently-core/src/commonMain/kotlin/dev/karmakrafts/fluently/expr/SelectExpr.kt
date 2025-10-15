@@ -18,6 +18,7 @@ package dev.karmakrafts.fluently.expr
 
 import dev.karmakrafts.fluently.element.PatternElement
 import dev.karmakrafts.fluently.eval.EvaluationContext
+import dev.karmakrafts.fluently.util.TokenRange
 
 /**
  * A selection expression that chooses among variants based on the value of [variable].
@@ -28,7 +29,9 @@ import dev.karmakrafts.fluently.eval.EvaluationContext
  * @property variable The selector expression whose string value is compared to variant keys.
  * @property variants The mapping from key expressions to their corresponding [Variant].
  */
-data class SelectExpr(val variable: Expr, val variants: Map<Expr, Variant>) : Expr {
+data class SelectExpr(
+    override val tokenRange: TokenRange, val variable: Expr, val variants: Map<Expr, Variant>
+) : Expr {
     /** Describes a single selectable variant. */
     data class Variant(val key: Expr, val elements: List<PatternElement>, val isDefault: Boolean = false)
 
@@ -50,3 +53,7 @@ data class SelectExpr(val variable: Expr, val variants: Map<Expr, Variant>) : Ex
         return defaultVariant.elements.joinToString("") { element -> element.evaluate(context) }
     }
 }
+
+fun ExprScope.select(variable: Expr, variants: Map<Expr, SelectExpr.Variant>): SelectExpr = SelectExpr(
+    tokenRange = TokenRange.synthetic, variable = variable, variants = variants
+)

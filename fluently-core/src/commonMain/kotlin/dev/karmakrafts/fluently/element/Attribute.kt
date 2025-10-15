@@ -16,9 +16,9 @@
 
 package dev.karmakrafts.fluently.element
 
-import dev.karmakrafts.fluently.eval.Evaluable
 import dev.karmakrafts.fluently.eval.EvaluationContext
 import dev.karmakrafts.fluently.util.Named
+import dev.karmakrafts.fluently.util.TokenRange
 
 /**
  * A named attribute belonging to a message or term.
@@ -33,10 +33,11 @@ import dev.karmakrafts.fluently.util.Named
  * @property elements Ordered pattern elements that compose the attribute's value.
  */
 data class Attribute( // @formatter:off
+    override val tokenRange: TokenRange,
     val entryName: String,
     override val name: String,
     val elements: List<PatternElement>
-) : Evaluable, Named { // @formatter:on
+) : Element, Named { // @formatter:on
     /**
      * Evaluates this attribute under [context] with cycle-detection bookkeeping.
      */

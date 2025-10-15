@@ -20,6 +20,7 @@ import dev.karmakrafts.fluently.element.Attribute
 import dev.karmakrafts.fluently.entry.Message
 import dev.karmakrafts.fluently.frontend.FluentParser
 import dev.karmakrafts.fluently.frontend.FluentParserBaseVisitor
+import dev.karmakrafts.fluently.util.TokenRange
 
 internal class MessageParser(
     val context: ParserContext
@@ -36,11 +37,11 @@ internal class MessageParser(
     private fun parseAttribute(entryName: String, ctx: FluentParser.AttributeContext): Attribute {
         val name = ctx.IDENT().text
         val attribElements = ctx.pattern()
-            .patternElement()
-            .asSequence()
-            .flatMap { element -> element.accept(context.patternElementParser) }
-            .toList()
-        return Attribute(entryName, name, attribElements)
+            ?.patternElement()
+            ?.asSequence()
+            ?.flatMap { element -> element.accept(context.patternElementParser) }
+            ?.toList() ?: emptyList()
+        return Attribute(TokenRange.fromContext(ctx), entryName, name, attribElements)
     }
 
     override fun visitMessage(ctx: FluentParser.MessageContext): List<Message> {
@@ -56,6 +57,6 @@ internal class MessageParser(
             .map { attribute -> parseAttribute(name, attribute) }
             .associateBy { attribute -> attribute.name }
         // @formatter:on
-        return listOf(Message(name, elements, attributes))
+        return listOf(Message(TokenRange.fromContext(ctx), name, elements, attributes))
     }
 }

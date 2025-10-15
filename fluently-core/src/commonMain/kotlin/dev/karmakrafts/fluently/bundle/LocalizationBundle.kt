@@ -20,7 +20,8 @@ import dev.karmakrafts.fluently.LocalizationFile
 import dev.karmakrafts.fluently.bundle.LocalizationBundle.Companion.VERSION
 import dev.karmakrafts.fluently.bundle.LocalizationBundle.Companion.fromJsonString
 import dev.karmakrafts.fluently.bundle.LocalizationBundle.Companion.readJsonFrom
-import dev.karmakrafts.fluently.eval.EvaluationContextBuilder
+import dev.karmakrafts.fluently.eval.EvaluationContextSpec
+import dev.karmakrafts.fluently.expr.DefaultExprScope
 import dev.karmakrafts.fluently.util.json
 import kotlinx.io.Sink
 import kotlinx.io.Source
@@ -57,9 +58,12 @@ data class LocalizationBundle private constructor( // @formatter:off
          * Parses a JSON [source] string into a [LocalizationBundle] and validates [version].
          * @throws IllegalStateException if the bundle version does not match [VERSION].
          */
+        @Throws(FluentlyBundleException::class)
         fun fromJsonString(@Language("json") source: String): LocalizationBundle =
             json.decodeFromString<LocalizationBundle>(source).apply {
-                check(version == VERSION) { "Mismatched localization bundle version" }
+                if (version != VERSION) {
+                    throw FluentlyBundleException("Mismatched localization bundle version")
+                }
             }
 
         /** Reads UTF‑8 JSON from [source] and delegates to [fromJsonString]. */
@@ -115,6 +119,11 @@ data class LocalizationBundle private constructor( // @formatter:off
         return entries[closestLocale]
     }
 
+    @Throws(FluentlyBundleException::class)
+    fun getClosestEntryOrDefault(locale: String): BundleEntry =
+        findClosestEntry(locale) ?: findClosestEntry(defaultLocale)
+        ?: throw FluentlyBundleException("Could not load language $locale")
+
     /**
      * Loads and parses the Fluent resource for [locale] into a [LocalizationFile].
      *
@@ -128,21 +137,17 @@ data class LocalizationBundle private constructor( // @formatter:off
      * @return The parsed localization file ready for message formatting.
      * @throws IllegalStateException If [locale] is not present in [entries].
      */
-    inline fun loadLocale(
+    inline fun loadLocale( // @formatter:off
         locale: String,
         resourceProvider: (String) -> Source,
-        crossinline globalContextInit: EvaluationContextBuilder.() -> Unit = {}
-    ): LocalizationFile {
-        // @formatter:off
-        val entry = findClosestEntry(locale)
-            ?: findClosestEntry(defaultLocale)
-            ?: error("Could not load language $locale")
-        // @formatter:on
+        crossinline globalContextInit: EvaluationContextSpec = {}
+    ): LocalizationFile { // @formatter:on
+        val entry = getClosestEntryOrDefault(locale)
         return resourceProvider(entry.path).use { source ->
             LocalizationFile.parse(source) {
                 globalContextInit()
-                variables(defaults.mapValues { (_, default) -> default.asExpr() })
-                variables(entry.defaults.mapValues { (_, default) -> default.asExpr() })
+                variables(defaults.mapValues { (_, default) -> with(DefaultExprScope) { default.asExpr() } })
+                variables(entry.defaults.mapValues { (_, default) -> with(DefaultExprScope) { default.asExpr() } })
             }
         }
     }
@@ -151,13 +156,9 @@ data class LocalizationBundle private constructor( // @formatter:off
     suspend inline fun loadLocaleSuspend(
         locale: String,
         resourceProvider: suspend (String) -> Source,
-        crossinline globalContextInit: EvaluationContextBuilder.() -> Unit = {}
+        crossinline globalContextInit: EvaluationContextSpec = {}
     ): LocalizationFile {
-        // @formatter:off
-        val entry = findClosestEntry(locale)
-            ?: findClosestEntry(defaultLocale)
-            ?: error("Could not load language $locale")
-        // @formatter:on
+        val entry = getClosestEntryOrDefault(locale)
         return resourceProvider(entry.path).use { source ->
             LocalizationFile.parse(source) {
                 globalContextInit()
@@ -183,7 +184,7 @@ data class LocalizationBundle private constructor( // @formatter:off
      */
     inline fun loadDefaultLocale( // @formatter:off
         resourceProvider: (String) -> Source,
-        crossinline globalContextInit: EvaluationContextBuilder.() -> Unit = {}
+        crossinline globalContextInit: EvaluationContextSpec = {}
     ): LocalizationFile { // @formatter:on
         return loadLocale(defaultLocale, resourceProvider, globalContextInit)
     }
@@ -191,7 +192,7 @@ data class LocalizationBundle private constructor( // @formatter:off
     /** Same as [loadDefaultLocale] but wires through resource provider suspension */
     suspend inline fun loadDefaultLocaleSuspend( // @formatter:off
         resourceProvider: suspend (String) -> Source,
-        crossinline globalContextInit: EvaluationContextBuilder.() -> Unit = {}
+        crossinline globalContextInit: EvaluationContextSpec = {}
     ): LocalizationFile { // @formatter:on
         return loadLocaleSuspend(defaultLocale, resourceProvider, globalContextInit)
     }

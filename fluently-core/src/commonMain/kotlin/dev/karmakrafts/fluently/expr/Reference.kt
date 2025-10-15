@@ -17,6 +17,8 @@
 package dev.karmakrafts.fluently.expr
 
 import dev.karmakrafts.fluently.eval.EvaluationContext
+import dev.karmakrafts.fluently.eval.FluentlyEvaluationException
+import dev.karmakrafts.fluently.util.TokenRange
 
 /**
  * Reference to a message, attribute, or variable within the current bundle or context.
@@ -29,7 +31,9 @@ import dev.karmakrafts.fluently.eval.EvaluationContext
  * @property name The identifier of the message/term or variable being referenced.
  * @property attributeName The attribute name when [referenceType] is [Type.ATTRIBUTE]; otherwise `null`.
  */
-data class Reference(val referenceType: Type, val name: String, val attributeName: String?) : Expr {
+data class Reference(
+    override val tokenRange: TokenRange, val referenceType: Type, val name: String, val attributeName: String?
+) : Expr {
     /** The supported kinds of references. */
     enum class Type { MESSAGE, ATTRIBUTE, VARIABLE }
 
@@ -40,18 +44,29 @@ data class Reference(val referenceType: Type, val name: String, val attributeNam
     override fun evaluate(context: EvaluationContext): String {
         return when (referenceType) {
             Type.MESSAGE -> {
-                val message = context.file[name] ?: error("No message named '$name'")
-                check(!context.hasVisitedParent(message)) {
-                    "Message '$name' cannot reference itself (${context.getParentCycle()})"
+                val message = context.file[name] ?: throw FluentlyEvaluationException( // @formatter:off
+                    message = "No message named '$name'",
+                    tokenRange = tokenRange
+                ) // @formatter:on
+                if (context.hasVisitedParent(message)) {
+                    throw FluentlyEvaluationException(
+                        message = "Message '$name' cannot reference itself (${context.getParentCycle()})",
+                        tokenRange = tokenRange
+                    )
                 }
                 message.evaluate(context)
             }
 
             Type.ATTRIBUTE -> {
-                val attribute =
-                    context.file[name, attributeName!!] ?: error("No attribute named '$name.$attributeName'")
-                check(!context.hasVisitedParent(attribute)) {
-                    "Attribute '$name.$attributeName' cannot reference itself (${context.getParentCycle()})"
+                val attribute = context.file[name, attributeName!!] ?: throw FluentlyEvaluationException( // @formatter:off
+                    message = "No attribute named '$name.$attributeName'",
+                    tokenRange = tokenRange
+                ) // @formatter:on
+                if (context.hasVisitedParent(attribute)) {
+                    throw FluentlyEvaluationException(
+                        message = "Attribute '$name.$attributeName' cannot reference itself (${context.getParentCycle()})",
+                        tokenRange = tokenRange
+                    )
                 }
                 attribute.evaluate(context)
             }
@@ -60,3 +75,10 @@ data class Reference(val referenceType: Type, val name: String, val attributeNam
         }
     }
 }
+
+fun ExprScope.reference(type: Reference.Type, name: String, attributeName: String? = null): Reference = Reference( // @formatter:off
+    tokenRange = TokenRange.synthetic,
+    referenceType = type,
+    name = name,
+    attributeName = attributeName
+) // @formatter:on

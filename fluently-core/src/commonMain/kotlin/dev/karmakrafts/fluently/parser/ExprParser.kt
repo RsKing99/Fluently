@@ -31,6 +31,7 @@ import dev.karmakrafts.fluently.expr.TermReference
 import dev.karmakrafts.fluently.frontend.FluentLexer
 import dev.karmakrafts.fluently.frontend.FluentParser
 import dev.karmakrafts.fluently.frontend.FluentParserBaseVisitor
+import dev.karmakrafts.fluently.util.TokenRange
 import org.antlr.v4.kotlinruntime.tree.TerminalNode
 
 internal class ExprParser(
@@ -46,7 +47,7 @@ internal class ExprParser(
     }
 
     override fun visitVariableReference(ctx: FluentParser.VariableReferenceContext): List<Expr> {
-        return listOf(Reference(Reference.Type.VARIABLE, ctx.IDENT().text, null))
+        return listOf(Reference(TokenRange.fromContext(ctx), Reference.Type.VARIABLE, ctx.IDENT().text, null))
     }
 
     override fun visitMessageReference(ctx: FluentParser.MessageReferenceContext): List<Expr> {
@@ -54,10 +55,11 @@ internal class ExprParser(
         val attribute = ctx.attributeAccessor()?.IDENT()?.text
         val type = if (attribute != null) Reference.Type.ATTRIBUTE
         else Reference.Type.MESSAGE
-        return listOf(Reference(type, name, attribute))
+        return listOf(Reference(TokenRange.fromContext(ctx), type, name, attribute))
     }
 
     private fun expandElementsRecursively( // @formatter:off
+        tokenRange: TokenRange,
         arguments: Map<String, Expr>,
         queue: ArrayDeque<PatternElement>,
         elements: MutableList<PatternElement>
@@ -69,7 +71,9 @@ internal class ExprParser(
             when (element) {
                 is Term -> "-${element.name}"
                 is Attribute -> ".${element.name}"
-                else -> error("Unsupported element type ${element::class.simpleName}")
+                else -> throw FluentlyParserException(
+                    message = "Unsupported element type ${element::class.simpleName}", tokenRange = tokenRange
+                )
             }
         }
         // Recursively expand all elements in the queue
@@ -78,12 +82,24 @@ internal class ExprParser(
                 // Resolve all term references recursively
                 is TermReference -> {
                     val termName = element.entryName
-                    val term = context.terms[termName] ?: error("No term named '$termName'")
-                    check(term !in visited) { "Term '$termName' cannot reference itself (${getCycle()})" }
+                    val term = context.terms[termName] ?: throw FluentlyParserException(
+                        message = "No term named '$termName'", tokenRange = tokenRange
+                    )
+                    if (term in visited) {
+                        throw FluentlyParserException(
+                            message = "Term '$termName' cannot reference itself (${getCycle()})",
+                            tokenRange = tokenRange
+                        )
+                    }
                     val attribName = element.attribName
                     val attribute = attribName?.let(term.attributes::get)
                     if (attribute != null) {
-                        check(attribute !in visited) { "Attribute '$attribName' cannot reference itself (${getCycle()})" }
+                        if (term in visited) {
+                            throw FluentlyParserException(
+                                message = "Attribute '$termName.$attribName' cannot reference itself (${getCycle()})",
+                                tokenRange = tokenRange
+                            )
+                        }
                         queue += attribute.elements
                         visited += attribute
                         continue
@@ -104,13 +120,14 @@ internal class ExprParser(
     }
 
     private fun expandElements( // @formatter:off
+        tokenRange: TokenRange,
         elements: List<PatternElement>,
         arguments: Map<String, Expr>
     ): List<PatternElement> { // @formatter:on
         val expandedElements = ArrayList<PatternElement>()
         val queue = ArrayDeque<PatternElement>()
         queue += elements
-        expandElementsRecursively(arguments, queue, expandedElements)
+        expandElementsRecursively(tokenRange, arguments, queue, expandedElements)
         return expandedElements
     }
 
@@ -125,31 +142,45 @@ internal class ExprParser(
             val namedArgument = argument.namedArgument()
             if (namedArgument != null) {
                 val name = namedArgument.IDENT().text
-                // @formatter:off
-                val value = namedArgument.stringLiteral()?.accept(context.exprParser)?.first()
-                    ?: namedArgument.numberLiteral()!!.accept(context.exprParser).first()
-                // @formatter:on
+                val value = namedArgument.inlineExpression().accept(context.exprParser).first()
                 arguments[name] = value
                 continue
             }
-            error("Parametrized term may not use positional arguments") // TODO: add support for this?
+            // See https://github.com/projectfluent/fluent/issues/293
+            throw FluentlyParserException(
+                message = "Parametrized term may not use positional arguments", tokenRange = TokenRange.fromContext(ctx)
+            )
         }
 
         // If we are expanding terms, replace term refs with compound expression of actual elements
         if (context.expandTerms) {
-            val term = context.terms[name] ?: error("No term named '$name'")
+            val term = context.terms[name] ?: throw FluentlyParserException( // @formatter:off
+                message = "No term named '$name'",
+                tokenRange = TokenRange.fromContext(ctx)
+            ) // @formatter:on
             if (attribute != null) {
-                val attrib = term.attributes[attribute] ?: error("No attribute named '$attribute' on term '$name'")
-                return listOf(CompoundExpr(expandElements(attrib.elements, arguments)))
+                val attrib = term.attributes[attribute] ?: throw FluentlyParserException(
+                    message = "No attribute named '$attribute' on term '$name'",
+                    tokenRange = TokenRange.fromContext(ctx)
+                )
+                return listOf(
+                    CompoundExpr(
+                        TokenRange.fromContext(ctx), expandElements(attrib.tokenRange, attrib.elements, arguments)
+                    )
+                )
             }
-            return listOf(CompoundExpr(expandElements(term.elements, arguments)))
+            return listOf(
+                CompoundExpr(
+                    TokenRange.fromContext(ctx), expandElements(term.tokenRange, term.elements, arguments)
+                )
+            )
         }
 
         // Otherwise insert term reference which are to be lowered in a secondary parsing step
         if (attribute != null) {
-            return listOf(TermReference(name, attribute, arguments))
+            return listOf(TermReference(TokenRange.fromContext(ctx), name, attribute, arguments))
         }
-        return listOf(TermReference(name, null, arguments))
+        return listOf(TermReference(TokenRange.fromContext(ctx), name, null, arguments))
     }
 
     override fun visitFunctionReference(ctx: FluentParser.FunctionReferenceContext): List<Expr> {
@@ -160,24 +191,21 @@ internal class ExprParser(
             val namedArgument = argument.namedArgument()
             if (namedArgument != null) {
                 val name = namedArgument.IDENT().text
-                // @formatter:off
-                val value = namedArgument.stringLiteral()?.accept(context.exprParser)?.first()
-                    ?: namedArgument.numberLiteral()!!.accept(context.exprParser).first()
-                // @formatter:on
+                val value = namedArgument.inlineExpression().accept(context.exprParser).first()
                 arguments += name to value
                 continue
             }
             val value = argument.inlineExpression()!!.accept(context.exprParser).first()
             arguments += null to value
         }
-        return listOf(FunctionReference(name, arguments))
+        return listOf(FunctionReference(TokenRange.fromContext(ctx), name, arguments))
     }
 
     override fun visitNumberLiteral(ctx: FluentParser.NumberLiteralContext): List<Expr> {
         val numberText = ctx.NUMBER().text
         val value = if ('.' in numberText) numberText.toDouble()
         else numberText.toLong()
-        return listOf(NumberLiteral(value))
+        return listOf(NumberLiteral(TokenRange.fromContext(ctx), value))
     }
 
     override fun visitStringLiteral(ctx: FluentParser.StringLiteralContext): List<Expr> {
@@ -199,12 +227,16 @@ internal class ExprParser(
                 }
             } // @formatter:on
         }
-        return listOf(StringLiteral(builder.toString()))
+        return listOf(StringLiteral(TokenRange.fromContext(ctx), builder.toString()))
     }
 
     override fun visitSelectExpression(ctx: FluentParser.SelectExpressionContext): List<Expr> {
         fun parseVariantKey(ctx: FluentParser.VariantKeyContext): Expr {
-            ctx.IDENT()?.text?.let { key -> return StringLiteral(key) } // Ident keys are interpreted as strings here
+            ctx.IDENT()?.let { key ->
+                return StringLiteral(
+                    TokenRange.fromTerminalNode(key), key.text
+                )
+            } // Ident keys are interpreted as strings here
             return ctx.numberLiteral()!!.accept(context.exprParser).first()
         }
 
@@ -231,6 +263,6 @@ internal class ExprParser(
             .toList()
         variants[defaultKey] = SelectExpr.Variant(defaultKey, elements, true)
 
-        return listOf(SelectExpr(variable, variants))
+        return listOf(SelectExpr(TokenRange.fromContext(ctx), variable, variants))
     }
 }

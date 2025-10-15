@@ -18,6 +18,7 @@ package dev.karmakrafts.fluently.expr
 
 import dev.karmakrafts.fluently.element.PatternElement
 import dev.karmakrafts.fluently.eval.EvaluationContext
+import dev.karmakrafts.fluently.util.TokenRange
 
 /**
  * Concatenation of multiple [PatternElement]s into a single string expression.
@@ -27,7 +28,9 @@ import dev.karmakrafts.fluently.eval.EvaluationContext
  *
  * @property elements The ordered list of pattern elements to be concatenated.
  */
-data class CompoundExpr(val elements: List<PatternElement>) : Expr {
+data class CompoundExpr(
+    override val tokenRange: TokenRange, val elements: List<PatternElement>
+) : Expr {
     override fun getType(context: EvaluationContext): ExprType {
         return ExprType.STRING
     }
@@ -36,3 +39,7 @@ data class CompoundExpr(val elements: List<PatternElement>) : Expr {
         return elements.joinToString("") { element -> element.evaluate(context) }
     }
 }
+
+fun ExprScope.compound(elements: List<PatternElement>): CompoundExpr = CompoundExpr(
+    tokenRange = TokenRange.synthetic, elements = elements
+)

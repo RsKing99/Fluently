@@ -14,15 +14,6 @@
  * limitations under the License.
  */
 
-package dev.karmakrafts.fluently.element
+package dev.karmakrafts.fluently
 
-import dev.karmakrafts.fluently.eval.Evaluable
-
-/**
- * A building block of a Fluent pattern that can be evaluated to a string.
- *
- * Pattern elements are the mix of plain text and inline expressions that compose
- * the value of messages, terms, and attributes. The evaluation contract is inherited
- * from [Evaluable] and must be pure with respect to the provided evaluation context.
- */
-interface PatternElement : Element
+open class FluentlyException(message: String?, cause: Throwable?) : RuntimeException(message, cause)

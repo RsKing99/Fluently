@@ -17,12 +17,15 @@
 package dev.karmakrafts.fluently.element
 
 import dev.karmakrafts.fluently.eval.EvaluationContext
+import dev.karmakrafts.fluently.util.TokenRange
 
 /**
  * A plain text pattern element.
  *
  * @property value The literal string content that will be emitted during evaluation.
  */
-data class Text(val value: String) : PatternElement {
+data class Text(
+    override val tokenRange: TokenRange, val value: String
+) : PatternElement {
     override fun evaluate(context: EvaluationContext): String = value
 }

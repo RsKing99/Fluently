@@ -21,6 +21,7 @@ import dev.karmakrafts.fluently.element.PatternElement
 import dev.karmakrafts.fluently.element.Text
 import dev.karmakrafts.fluently.frontend.FluentParser
 import dev.karmakrafts.fluently.frontend.FluentParserBaseVisitor
+import dev.karmakrafts.fluently.util.TokenRange
 
 internal class PatternElementParser(
     val context: ParserContext
@@ -35,11 +36,11 @@ internal class PatternElementParser(
     }
 
     override fun visitInlineText(ctx: FluentParser.InlineTextContext): List<PatternElement> {
-        return listOf(Text(ctx.text))
+        return listOf(Text(TokenRange.fromContext(ctx), ctx.text))
     }
 
     override fun visitBlockText(ctx: FluentParser.BlockTextContext): List<PatternElement> {
-        return listOf(Block(ctx.inlineText().accept(this).first()))
+        return listOf(Block(TokenRange.fromContext(ctx), ctx.inlineText().accept(this).first()))
     }
 
     override fun visitInlinePlaceable(ctx: FluentParser.InlinePlaceableContext): List<PatternElement> {
@@ -51,6 +52,6 @@ internal class PatternElementParser(
     }
 
     override fun visitBlockPlaceable(ctx: FluentParser.BlockPlaceableContext): List<PatternElement> {
-        return listOf(Block(ctx.inlinePlaceable().accept(context.exprParser).first()))
+        return listOf(Block(TokenRange.fromContext(ctx), ctx.inlinePlaceable().accept(context.exprParser).first()))
     }
 }

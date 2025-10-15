@@ -17,7 +17,7 @@
 package dev.karmakrafts.fluently
 
 import dev.karmakrafts.fluently.expr.ExprType
-import dev.karmakrafts.fluently.expr.StringLiteral
+import dev.karmakrafts.fluently.expr.string
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -26,7 +26,7 @@ class LocalizationFileTest {
     @Test
     fun `Parse empty file`() {
         val file = LocalizationFile.parse("")
-        assertTrue(file.messages.isEmpty())
+        assertTrue(file.entries.isEmpty())
     }
 
     @Test
@@ -38,7 +38,7 @@ class LocalizationFileTest {
             message-number-two = HELLOU
         """.trimIndent()
         )
-        assertEquals(2, file.messages.size)
+        assertEquals(2, file.entries.size)
     }
 
     @Test
@@ -67,11 +67,11 @@ class LocalizationFileTest {
         """.trimIndent()
         )
 
-        assertEquals(4, file.messages.size)
+        assertEquals(4, file.entries.size)
 
         assertEquals("""Testing""", file.format("message-number-three", "foo"))
         assertEquals("""fops""", file.format("animal-type") {
-            stringVariable("test", "wolf")
+            variable("test", string("wolf"))
         })
 
         assertEquals("""TESTING:: Karma Krafts""", file.format("message-number-one"))
@@ -80,14 +80,14 @@ class LocalizationFileTest {
         assertEquals(
             """It's a 🐺${"\n\n"} wolp! Pure Kotlin Fluent implementation (42)!!""",
             file.format("message-number-three") {
-                stringVariable("test", "wolf")
+                variable("test", string("wolf"))
                 function("DEXCL") {
                     parameter("name", ExprType.STRING)
                     parameter("index", ExprType.NUMBER)
                     action { ctx, args ->
                         val name = args["name"]!!.evaluate(ctx)
                         val index = args["index"]!!.evaluate(ctx)
-                        StringLiteral("$name ($index)!!")
+                        string("$name ($index)!!")
                     }
                 }
             })

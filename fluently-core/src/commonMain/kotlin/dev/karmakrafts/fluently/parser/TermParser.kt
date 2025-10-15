@@ -21,6 +21,7 @@ import dev.karmakrafts.fluently.element.Attribute
 import dev.karmakrafts.fluently.entry.Term
 import dev.karmakrafts.fluently.frontend.FluentParser
 import dev.karmakrafts.fluently.frontend.FluentParserBaseVisitor
+import dev.karmakrafts.fluently.util.TokenRange
 
 internal class TermParser(
     file: LocalizationFile
@@ -40,26 +41,26 @@ internal class TermParser(
     private fun parseAttribute(entryName: String, ctx: FluentParser.AttributeContext): Attribute {
         val name = ctx.IDENT().text
         val attribElements = ctx.pattern()
-            .patternElement()
-            .asSequence()
-            .flatMap { element -> element.accept(patternElementParser) }
-            .toList()
-        return Attribute(entryName, name, attribElements)
+            ?.patternElement()
+            ?.asSequence()
+            ?.flatMap { element -> element.accept(patternElementParser) }
+            ?.toList() ?: emptyList()
+        return Attribute(TokenRange.fromContext(ctx), entryName, name, attribElements)
     }
 
     override fun visitTerm(ctx: FluentParser.TermContext): Map<String, Term> {
         val name = ctx.IDENT().text
         val elements = ctx.pattern()
-            .patternElement()
-            .asSequence()
-            .flatMap { element -> element.accept(patternElementParser) }
-            .toList()
+            ?.patternElement()
+            ?.asSequence()
+            ?.flatMap { element -> element.accept(patternElementParser) }
+            ?.toList() ?: emptyList()
         // @formatter:off
         val attributes = ctx.attribute()
             .asSequence()
             .map { attribute -> parseAttribute(name, attribute) }
             .associateBy { attribute -> attribute.name }
         // @formatter:on
-        return mapOf(name to Term(name, elements, attributes))
+        return mapOf(name to Term(TokenRange.fromContext(ctx), name, elements, attributes))
     }
 }

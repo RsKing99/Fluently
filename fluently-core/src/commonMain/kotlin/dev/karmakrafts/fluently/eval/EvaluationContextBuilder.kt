@@ -17,9 +17,9 @@
 package dev.karmakrafts.fluently.eval
 
 import dev.karmakrafts.fluently.LocalizationFile
+import dev.karmakrafts.fluently.expr.DefaultExprScope
 import dev.karmakrafts.fluently.expr.Expr
-import dev.karmakrafts.fluently.expr.NumberLiteral
-import dev.karmakrafts.fluently.expr.StringLiteral
+import dev.karmakrafts.fluently.expr.ExprScope
 
 /**
  * Builder DSL for constructing an [EvaluationContext].
@@ -27,7 +27,7 @@ import dev.karmakrafts.fluently.expr.StringLiteral
  * Use [variable] helpers to declare runtime variables and [function] to register Fluent functions
  * before calling the internal [build] method via the extension [Evaluable.evaluate].
  */
-class EvaluationContextBuilder @PublishedApi internal constructor() {
+class EvaluationContextBuilder @PublishedApi internal constructor() : ExprScope by DefaultExprScope {
     @PublishedApi
     internal val functions: HashMap<String, Function> = HashMap()
 
@@ -47,26 +47,6 @@ class EvaluationContextBuilder @PublishedApi internal constructor() {
     /** Adds the given expression (literal) as a value under [name]. */
     fun variable(name: String, value: Expr) {
         variables[name] = value
-    }
-
-    /** Adds an enum [value] as a lowercase string variable under [name]. */
-    fun enumVariable(name: String, value: Enum<*>) {
-        variables[name] = StringLiteral(value.name.lowercase())
-    }
-
-    /** Adds a string [value] variable under [name]. */
-    fun stringVariable(name: String, value: String) {
-        variables[name] = StringLiteral(value)
-    }
-
-    /** Adds a boolean [value] variable under [name] (stored as a string). */
-    fun boolVariable(name: String, value: Boolean) {
-        variables[name] = StringLiteral(value.toString())
-    }
-
-    /** Adds a numeric [value] variable under [name]. */
-    fun numberVariable(name: String, value: Number) {
-        variables[name] = NumberLiteral(value)
     }
 
     /** Registers a function named [name]. */

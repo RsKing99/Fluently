@@ -43,19 +43,35 @@ data class EvaluationContext @PublishedApi internal constructor(
     val parentStack: ArrayDeque<Named> = ArrayDeque() // Used for multi-level cycle detection
 ) {
     /**
-     * Returns a new context that contains this context extended with [other].
+     * Returns a new context that combines this context with [other].
      *
-     * Merge rules:
-     * - The [functions] map is merged with entries from [EvaluationContext.functions] taking precedence on key conflicts.
-     * - The [variables] map is merged with entries from [EvaluationContext.variables] taking precedence on key conflicts.
-     * - The [file] remains the same as in this context.
-     * - The [parentStack] reference is reused (not copied) so cycle detection continues across nested evaluations.
-     *
-     * This is useful to temporarily introduce additional variables or functions for a sub‑evaluation
-     * without mutating the original context.
+     * The resulting context:
+     * - uses this [file],
+     * - merges [functions] with [other]'s functions (values from [other] override on key collision),
+     * - merges [variables] with [other]'s variables (values from [other] override on key collision),
+     * - reuses the same [parentStack] reference for cycle detection.
      */
     operator fun plus(other: EvaluationContext): EvaluationContext {
-        return EvaluationContext(file, functions + other.functions, variables + other.variables, parentStack)
+        return copy( // @formatter:off
+            functions = functions + other.functions,
+            variables = variables + other.variables
+        ) // @formatter:on
+    }
+
+    /**
+     * Creates a new context with [functions] overlaid on top of the current set.
+     * If a function with the same name exists, the provided one takes precedence.
+     */
+    fun overlayFunctions(functions: Map<String, Function>): EvaluationContext {
+        return copy(functions = this.functions + functions)
+    }
+
+    /**
+     * Creates a new context with [variables] overlaid on top of the current set.
+     * If a variable with the same name exists, the provided one takes precedence.
+     */
+    fun overlayVariables(variables: Map<String, Expr>): EvaluationContext {
+        return copy(variables = this.variables + variables)
     }
 
     /** Returns a string representing the cycle path when a self-reference is detected. */

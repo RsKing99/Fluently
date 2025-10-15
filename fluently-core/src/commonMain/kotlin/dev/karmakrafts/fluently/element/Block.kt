@@ -17,6 +17,7 @@
 package dev.karmakrafts.fluently.element
 
 import dev.karmakrafts.fluently.eval.EvaluationContext
+import dev.karmakrafts.fluently.util.TokenRange
 
 /**
  * A block element that inserts a newline before the contained [element].
@@ -27,7 +28,7 @@ import dev.karmakrafts.fluently.eval.EvaluationContext
  * @property element The nested pattern element to render after the newline.
  */
 data class Block(
-    val element: PatternElement
+    override val tokenRange: TokenRange, val element: PatternElement
 ) : PatternElement {
     override fun evaluate(context: EvaluationContext): String {
         return "\n${element.evaluate(context)}"

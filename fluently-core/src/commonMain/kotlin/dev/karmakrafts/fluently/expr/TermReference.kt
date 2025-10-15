@@ -17,34 +17,62 @@
 package dev.karmakrafts.fluently.expr
 
 import dev.karmakrafts.fluently.eval.EvaluationContext
+import dev.karmakrafts.fluently.eval.FluentlyEvaluationException
+import dev.karmakrafts.fluently.util.TokenRange
 
 /**
- * Reference to a Fluent term in an expression tree.
+ * Represents a reference to a Fluent term within an expression tree.
  *
- * A term is a private reusable entry whose identifier starts with a dash in Fluent source (for example, `-brand-name`).
- * This node may optionally address a specific attribute of the term and may carry named arguments.
- *
- * This is a high-level AST node produced by parsing; it must be lowered to a concrete, resolved expression before
- * type inference or evaluation. Until then, [getType] and [evaluate] will throw an error.
- *
- * @property entryName The name of the target term (without the leading dash).
- * @property attribName The name of the attribute addressed on the term, or `null` to reference the term's value.
- * @property arguments Named arguments to pass to the term when it is formatted; empty if none.
+ * A term reference points to a term defined in the current localization file and
+ * may optionally reference a specific attribute of that term. It can also be
+ * parameterized with a map of argument expressions that are evaluated and
+ * provided to the referenced term (or attribute) during evaluation.
  */
-data class TermReference(
-    val entryName: String, val attribName: String?, val arguments: Map<String, Expr>
-) : Expr {
-    /**
-     * Indicates whether this reference supplies any arguments to the term.
-     */
+data class TermReference( // @formatter:off
+    override val tokenRange: TokenRange,
+    val entryName: String,
+    val attribName: String?,
+    val arguments: Map<String, Expr>
+) : Expr { // @formatter:on
     inline val isParametrized: Boolean
         get() = arguments.isNotEmpty()
 
     override fun getType(context: EvaluationContext): ExprType {
-        error("Term reference hasn't been lowered")
+        return ExprType.STRING
     }
 
     override fun evaluate(context: EvaluationContext): String {
-        error("Term reference hasn't been lowered")
+        val term = context.file.terms().find { term -> term.name == entryName } ?: throw FluentlyEvaluationException( // @formatter:off
+            message = "No term named '$entryName'",
+            tokenRange = tokenRange
+        ) // @formatter:on
+        // This is a term reference
+        if(attribName == null) { // @formatter:off
+            if(context.hasVisitedParent(term)) {
+                throw FluentlyEvaluationException( // @formatter:off
+                    message = "Term '$term' cannot reference itself (${context.getParentCycle()})",
+                    tokenRange = tokenRange
+                ) // @formatter:on
+            }
+            return term.evaluate(context.overlayVariables(arguments))
+        } // @formatter:on
+        // Otherwise this is a reference to a term attribute
+        val attribute = term.attributes[attribName] ?: throw FluentlyEvaluationException( // @formatter:off
+            message = "No term attribute named '$attribName' on term '$entryName'",
+            tokenRange = tokenRange
+        ) // @formatter:on
+        if (context.hasVisitedParent(attribute)) {
+            throw FluentlyEvaluationException( // @formatter:off
+                message = "Attribute '$entryName.$attribName' cannot reference itself (${context.getParentCycle()})",
+                tokenRange = tokenRange
+            ) // @formatter:on
+        }
+        return attribute.evaluate(context.overlayVariables(arguments))
     }
 }
+
+fun ExprScope.termReference(
+    entryName: String, attribName: String? = null, arguments: Map<String, Expr> = emptyMap()
+): TermReference = TermReference(
+    tokenRange = TokenRange.synthetic, entryName = entryName, attribName = attribName, arguments = arguments
+)

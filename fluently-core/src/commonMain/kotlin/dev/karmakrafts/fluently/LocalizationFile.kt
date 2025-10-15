@@ -16,61 +16,44 @@
 
 package dev.karmakrafts.fluently
 
-import dev.karmakrafts.fluently.LocalizationFile.Companion.fromMessages
 import dev.karmakrafts.fluently.LocalizationFile.Companion.parse
 import dev.karmakrafts.fluently.element.Attribute
+import dev.karmakrafts.fluently.element.ElementReducer
+import dev.karmakrafts.fluently.entry.LocalizationEntry
 import dev.karmakrafts.fluently.entry.Message
+import dev.karmakrafts.fluently.entry.Term
 import dev.karmakrafts.fluently.eval.EvaluationContext
 import dev.karmakrafts.fluently.eval.EvaluationContextBuilder
+import dev.karmakrafts.fluently.eval.EvaluationContextSpec
 import dev.karmakrafts.fluently.eval.evaluationContext
 import dev.karmakrafts.fluently.frontend.FluentLexer
 import dev.karmakrafts.fluently.frontend.FluentParser
+import dev.karmakrafts.fluently.parser.FluentlyParserException
 import dev.karmakrafts.fluently.parser.ParserContext
 import dev.karmakrafts.fluently.parser.TermParser
+import dev.karmakrafts.fluently.util.Accessor
 import kotlinx.io.Source
 import kotlinx.io.readString
 import org.antlr.v4.kotlinruntime.CharStreams
 import org.antlr.v4.kotlinruntime.CommonTokenStream
+import org.antlr.v4.kotlinruntime.Token
 import org.intellij.lang.annotations.Language
 
-/**
- * In-memory representation of a parsed Fluent localization resource.
- *
- * A localization file holds all public message entries parsed from a Fluent source and provides
- * helpers to format messages and their attributes. Instances are typically created via one of the
- * [parse] overloads or [fromMessages] for programmatic construction. A shared
- * [globalContextInit] lambda can be supplied to seed the evaluation context with variables and
- * functions for every formatting call made through this file.
- *
- * This type is immutable from the API perspective; while [messages] is a mutable map internally,
- * it is only mutated during parsing/initialization and then accessed read-only through the API.
- *
- * @property messages Parsed messages indexed by name.
- * @property globalContextInit A lambda that initializes an [EvaluationContextBuilder] with common
- * variables and functions applied to every formatting request.
- */
 @ConsistentCopyVisibility
 data class LocalizationFile private constructor( // @formatter:off
-    internal val messages: MutableMap<String, Message> = HashMap(),
-    @PublishedApi internal val globalContextInit: EvaluationContextBuilder.() -> Unit
+    val tokens: List<Token> = emptyList(),
+    val entries: MutableList<LocalizationEntry> = ArrayList(),
+    val globalContextInit: EvaluationContextSpec = {}
 ) { // @formatter:on
     companion object {
-        val empty: LocalizationFile = fromMessages(emptyMap())
-
         /**
-         * Constructs a localization file from an existing [messages] map.
+         * An empty localization file with no messages.
          *
-         * Use this when messages are produced programmatically (e.g., in tests). The optional
-         * [globalContextInit] seeds the evaluation context for all subsequent formatting calls.
+         * Useful as a neutral default when no resources are available. Formatting calls
+         * against this instance will return placeholders as the requested messages/attributes
+         * do not exist.
          */
-        fun fromMessages( // @formatter:off
-            messages: Map<String, Message>,
-            globalContextInit: EvaluationContextBuilder.() -> Unit = {}
-        ): LocalizationFile { // @formatter:on
-            val file = LocalizationFile(globalContextInit = globalContextInit)
-            file.messages += messages
-            return file
-        }
+        val empty: LocalizationFile = LocalizationFile()
 
         /**
          * Parses Fluent [source] text into a [LocalizationFile].
@@ -79,47 +62,85 @@ data class LocalizationFile private constructor( // @formatter:off
          * constructs the final messages map. The optional [globalContextInit] lambda is stored on the
          * resulting [LocalizationFile] and will be composed into later formatting calls.
          *
+         * @param source The Fluent source text to parse.
+         * @param expandTerms Whether terms are expanded while parsing to save
+         *  performance by not evaluating them at runtime.
+         * @param globalContextInit A closure to seed every [EvaluationContext] created
+         *  by the resulting file instance.
          * @throws IllegalStateException if the Fluent input is syntactically invalid.
          */
+        @Throws(FluentlyParserException::class)
         fun parse( // @formatter:off
             @Language("fluent") source: String,
-            globalContextInit: EvaluationContextBuilder.() -> Unit = {}
+            expandTerms: Boolean = true,
+            globalContextInit: EvaluationContextSpec = {}
         ): LocalizationFile { // @formatter:on
             val charStream = CharStreams.fromString(source)
             val lexer = FluentLexer(charStream)
             val tokenStream = CommonTokenStream(lexer)
+            tokenStream.fill()
+            val tokens = tokenStream.tokens.toList() // Create a copy of the token stream list
             val parser = FluentParser(tokenStream)
             val fileNode = parser.file()
-            val file = LocalizationFile(globalContextInit = globalContextInit)
+            val file = LocalizationFile( // @formatter:off
+                tokens = tokens,
+                globalContextInit = globalContextInit
+            ) // @formatter:on
             val terms = fileNode.accept(TermParser(file))
-            val context = ParserContext(file, terms, true)
-            file.messages += fileNode.accept(context.messageParser).associateBy { message -> message.name }
+            val context = ParserContext(file, terms, expandTerms)
+            file.entries += fileNode.accept(context.messageParser)
+            if (!expandTerms) file.entries += terms.values // If we don't expand terms at parse time, retain them as entries
             return file
         }
 
         /**
          * Reads all UTF‑8 text from [source] and delegates to [parse] with a string input.
          */
+        @Throws(FluentlyParserException::class)
         fun parse( // @formatter:off
             source: Source,
-            globalContextInit: EvaluationContextBuilder.() -> Unit = {}
+            globalContextInit: EvaluationContextSpec = {}
         ): LocalizationFile { // @formatter:on
-            return parse(source.readString(), globalContextInit)
+            return parse(source.readString(), globalContextInit = globalContextInit)
         }
     }
 
     private val defaultContext: EvaluationContext = evaluationContext(this, globalContextInit)
 
+    fun messages(): Sequence<Message> = sequence {
+        for (entry in entries) {
+            if (entry !is Message) continue
+            yield(entry)
+        }
+    }
+
+    fun messageMap(): Map<String, Message> = messages().associateBy { message -> message.name }
+
+    fun terms(): Sequence<Term> = sequence {
+        for (entry in entries) {
+            if (entry !is Term) continue
+            yield(entry)
+        }
+    }
+
+    fun termMap(): Map<String, Term> = terms().associateBy { term -> term.name }
+
+    /** Returns true if this file contains the given message */
+    fun hasMessage(name: String): Boolean = this[name] != null
+
+    /** Returns true if this file contains the given message attribute */
+    fun hasAttribute(entryName: String, attribName: String): Boolean = this[entryName, attribName] != null
+
     /**
      * Returns the message with the given [name], or null if it does not exist.
      */
-    operator fun get(name: String): Message? = messages[name]
+    operator fun get(name: String): Message? =
+        entries.filterIsInstance<Message>().find { message -> message.name == name }
 
     /**
      * Returns the attribute [attribName] belonging to the message [entryName], or null if missing.
      */
-    operator fun get(entryName: String, attribName: String): Attribute? =
-        messages[entryName]?.attributes?.get(attribName)
+    operator fun get(entryName: String, attribName: String): Attribute? = this[entryName]?.attributes?.get(attribName)
 
     /**
      * Formats the message with the given [name] using the provided [context].
@@ -151,7 +172,7 @@ data class LocalizationFile private constructor( // @formatter:off
      */
     inline fun formatOrNull( // @formatter:off
         name: String,
-        crossinline contextInit: EvaluationContextBuilder.() -> Unit = {}
+        crossinline contextInit: EvaluationContextSpec = {}
     ): String? { // @formatter:on
         return this[name]?.evaluate(evaluationContext(this) {
             globalContextInit()
@@ -191,7 +212,7 @@ data class LocalizationFile private constructor( // @formatter:off
     inline fun formatOrNull( // @formatter:off
         entryName: String,
         attribName: String,
-        crossinline contextInit: EvaluationContextBuilder.() -> Unit = {}
+        crossinline contextInit: EvaluationContextSpec = {}
     ): String? { // @formatter:on
         return this[entryName, attribName]?.evaluate(evaluationContext(this) {
             globalContextInit()
@@ -219,7 +240,7 @@ data class LocalizationFile private constructor( // @formatter:off
      * @param contextInit Lambda to populate a [EvaluationContextBuilder] per-call.
      * @return The formatted message, or a placeholder if missing.
      */
-    fun format(name: String, contextInit: EvaluationContextBuilder.() -> Unit = {}): String =
+    fun format(name: String, contextInit: EvaluationContextSpec = {}): String =
         formatOrNull(name, contextInit) ?: "<$name>"
 
     /**
@@ -247,6 +268,64 @@ data class LocalizationFile private constructor( // @formatter:off
      * @param contextInit Lambda to populate a [EvaluationContextBuilder] per-call.
      * @return The formatted attribute, or a placeholder if missing.
      */
-    fun format(name: String, attribName: String, contextInit: EvaluationContextBuilder.() -> Unit = {}): String =
+    fun format(name: String, attribName: String, contextInit: EvaluationContextSpec = {}): String =
         formatOrNull(name, attribName, contextInit) ?: "<$name.$attribName>"
+
+    /**
+     * Returns an accessor that formats message values by name.
+     *
+     * The produced [Accessor] accepts a message identifier and returns the formatted string,
+     * applying this file's [globalContextInit].
+     */
+    fun formatting(context: EvaluationContext): Accessor<String> = Accessor { format(it, context) }
+
+    /**
+     * Returns an accessor that formats message values by name.
+     *
+     * The produced [Accessor] accepts a message identifier and returns the formatted string,
+     * applying this file's [globalContextInit].
+     */
+    fun formatting(contextInit: EvaluationContextSpec = {}): Accessor<String> = Accessor { format(it, contextInit) }
+
+    /**
+     * Returns an accessor for attributes of the given [entryName].
+     *
+     * The resulting [Accessor] accepts an attribute name and returns the formatted value for
+     * the attribute of the specified message, applying this file's [globalContextInit].
+     */
+    fun formatting(entryName: String, context: EvaluationContext): Accessor<String> = Accessor { attribName ->
+        format(entryName, attribName, context)
+    }
+
+    /**
+     * Returns an accessor for attributes of the given [entryName].
+     *
+     * The resulting [Accessor] accepts an attribute name and returns the formatted value for
+     * the attribute of the specified message, applying this file's [globalContextInit].
+     */
+    fun formatting(entryName: String, contextInit: EvaluationContextSpec = {}): Accessor<String> =
+        Accessor { attribName ->
+            format(entryName, attribName, contextInit)
+        }
+
+    /**
+     * Utility function for applying an [ElementReducer] to
+     * all messages of this file. Sequentially aggregates all
+     * sub-results for the return value.
+     *
+     * @param R The type of the value produced by reducing this file
+     *  using the given [ElementReducer].
+     * @param reducer The [ElementReducer] instance which to apply
+     *  to all messages of this file.
+     * @return A value aggregated by the given [ElementReducer] instance.
+     */
+    fun <R> accept(reducer: ElementReducer<R>): R {
+        return entries.map { entry -> entry.accept(reducer) }.reduce(reducer::aggregate)
+    }
+
+    inline fun <reified T : LocalizationEntry, R> acceptOnly(reducer: ElementReducer<R>): R { // @formatter:off
+        return entries.filterIsInstance<T>()
+            .map { entry -> entry.accept(reducer) }
+            .reduce(reducer::aggregate)
+    } // @formatter:on
 }
