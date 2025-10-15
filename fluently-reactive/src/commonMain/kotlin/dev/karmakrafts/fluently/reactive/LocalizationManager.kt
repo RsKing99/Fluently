@@ -18,7 +18,6 @@ package dev.karmakrafts.fluently.reactive
 
 import dev.karmakrafts.fluently.LocalizationFile
 import dev.karmakrafts.fluently.bundle.LocalizationBundle
-import dev.karmakrafts.fluently.eval.EvaluationContext
 import dev.karmakrafts.fluently.eval.EvaluationContextBuilder
 import dev.karmakrafts.fluently.eval.EvaluationContextSpec
 import dev.karmakrafts.fluently.util.Accessor
