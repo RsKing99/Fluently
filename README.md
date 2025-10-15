@@ -11,6 +11,16 @@ An implementation of [Project Fluent](https://projectfluent.org/) in pure Kotlin
 Fluently is a highly versatile and dynamic localization system which utilizes the Fluent language.
 It allows for asymmetric localizations and embedding localization logic directly into the resource.
 
+### Exclusive features & fixes
+
+Fluently offers some exclusive fixes and additional features compared to the official Fluent implementation,  
+including but not limited to:
+
+- Named arguments may accept any type of inline expression.
+  * Fixes https://github.com/projectfluent/fluent/issues/230
+- Remove the requirement for superfluous equal sign after an identifier
+  * Fixes https://github.com/projectfluent/fluent/issues/190
+
 ### How to use it
 
 First, add the official Maven Central repository to your `settings.gradle.kts`:
@@ -49,6 +59,22 @@ kotlin {
 
 Or, if you are only using Kotlin/JVM, add it to your top-level dependencies block instead.
 
+### Using the Gradle plugin
+
+Fluently optionally offers a Gradle plugin which generates type safe localization bindings
+from your Fluent files. This works for both Kotlin Multiplatform and Kotlin JVM.  
+Simple apply the plugin as follows:
+
+```kotlin
+plugins {
+    id("dev.karmakrafts.fluently.fluently-gradle-plugin") version "<version>"
+}
+```
+
+The plugin can be configured using the `fluently` project extension.
+
+**Example TBA**
+
 ### Loading Fluent files
 
 In order to load a localization file, the `LocalizationFile` class can be used as follows:
@@ -64,23 +90,23 @@ builtin functions and variables which are exported into the Fluent file using a 
 ```kotlin
 val file = LocalizationFile.parse(fileContent) {
     // Define custom variables
-    stringVariable("myVar", "Hello, World!")
-    
+    variable("myVar", string("Hello, World!"))
+
     // Define custom functions
     function("MYFUNC") {
         returnType = ExprType.STRING
         parameter("myParam", ExprType.STRING)
         action { ctx, args ->
             val myParam = args.first().evaluate(ctx)
-            StringLiteral("My result value")
+            string("My result value")
         }
     }
 }
 ```
 
 > **Tip:**
-On the JVM and Android, there's also a `parseResource` extension, which allows
-loading localization files directly as a JAR resource.
+> On the JVM and Android, there's also a `parseResource` extension, which allows
+> loading localization files directly as a JAR resource.
 
 ### Loading localization bundles
 
@@ -103,10 +129,15 @@ val file = manager.loadLocale("en-US", { path ->
 ```
 
 > **Tip:**
-On the JVM and Android, there's also a `fromResource` extension, which allows
-loading bundles directly as a JAR resource. In order to load the actual fluent
-files from the bundle, a supplementary `loadLocaleFromResource` extensions for
-the bundle instance is also provided.
+> The repository provides a JSON schema for working with Fluently bundles under
+> the `schema` directory. You can use it by adding a `$schema` variable to your
+> top-level JSON object and providing a local path or URL to the schema file.
+
+> **Tip:**
+> On the JVM and Android, there's also a `fromResource` extension, which allows
+> loading bundles directly as a JAR resource. In order to load the actual fluent
+> files from the bundle, a supplementary `loadLocaleFromResource` extensions for
+> the bundle instance is also provided.
 
 ### Using reactivity
 
@@ -133,7 +164,7 @@ val manager = LocalizationManager(bundle, { path ->
 val someValue = MutableStateFlow("Some text")
 val entry = manager.format("entryName", "attribName") { 
     // We can define variables based on other flows, so the localization is re-emitted when the input variable changes
-    reactiveStringVariable("someValue", someValue)
+    variable("someValue", string(someValue))
 }
 ```
 
