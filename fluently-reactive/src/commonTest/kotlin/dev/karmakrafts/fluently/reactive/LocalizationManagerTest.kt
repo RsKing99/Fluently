@@ -82,7 +82,7 @@ class LocalizationManagerTest {
 
         val myValue = MutableStateFlow("World")
         val entry = manager.format("my-entry") {
-            reactiveStringVariable("myValue", myValue)
+            variable("myValue", string(myValue))
         }.stateIn(backgroundScope)
 
         manager.locale.value = "en-US"

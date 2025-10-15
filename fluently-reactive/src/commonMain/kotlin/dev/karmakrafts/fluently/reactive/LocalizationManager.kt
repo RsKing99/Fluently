@@ -20,50 +20,69 @@ import dev.karmakrafts.fluently.LocalizationFile
 import dev.karmakrafts.fluently.bundle.LocalizationBundle
 import dev.karmakrafts.fluently.eval.EvaluationContext
 import dev.karmakrafts.fluently.eval.EvaluationContextBuilder
+import dev.karmakrafts.fluently.eval.EvaluationContextSpec
+import dev.karmakrafts.fluently.util.Accessor
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.mapLatest
-import kotlinx.coroutines.flow.shareIn
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.io.Source
 import kotlin.coroutines.CoroutineContext
 
-/**
- * Central reactive entry point for formatting localized messages.
- *
- * This manager loads Fluent localization files for the current [locale] from the provided [bundle]
- * and exposes them as cold and hot reactive streams. It also provides helpers to format messages
- * by name (and optional attribute) either returning nullable results or falling back to a readable
- * placeholder like "<key>" when not found.
- *
- * The manager keeps the default bundle locale loaded and switches current localizations whenever
- * [locale] changes. All formatting functions combine the current locale with the default locale so
- * missing messages are transparently resolved from the default.
- *
- * @param bundle A [LocalizationBundle] that knows how to list locales and load per-locale files.
- * @param resourceProvider A function that opens a resource by path for reading (used by the bundle).
- * @param coroutineContext Coroutine context used for internal reactive pipelines and scoping.
- * @param globalContextInit Builder applied to each formatting [EvaluationContext] to provide shared
- *   variables, functions, or terms common to the whole application.
- */
 @OptIn(ExperimentalCoroutinesApi::class)
+/**
+ * Manages reactive localization loading and formatting.
+ *
+ * This class bridges a dynamic [LocalizationBundle] (which may change over time)
+ * with reactive consumers using Kotlin Flows. It:
+ * - Tracks available locales and the current locale.
+ * - Loads the default and selected locale files on demand using [resourceProvider].
+ * - Exposes formatting helpers that emit updated strings whenever inputs change
+ *   (bundle, locale, or evaluation context).
+ *
+ * Typical usage:
+ * - Provide a [bundle] as a Flow if your bundle can change at runtime (e.g. hot reload),
+ *   or use the secondary constructor with a static bundle.
+ * - Provide [resourceProvider] to open localization resource streams by path.
+ * - Provide a [coroutineContext] used to back internal StateFlows and coroutines.
+ * - Optionally provide [globalContextInit] to pre-populate the evaluation context shared
+ *   by all formatting operations (e.g. global functions or variables).
+ *
+ * Threading/flow semantics:
+ * - Internally, a [CoroutineScope] is created from [coroutineContext].
+ * - All public StateFlows are hot and start eagerly.
+ * - [isLoading] is true while the selected locale has not yet been loaded and
+ *   [LocalizationFile.empty] is being used.
+ *
+ * @property bundle A flow of localization bundles. Use [flowOf] for a static bundle.
+ * @property resourceProvider Provides a Source for a given resource path found in the bundle.
+ * @property coroutineContext Coroutine context used for internal scope and state management.
+ * @property globalContextInit Initializes a global evaluation context shared by all formatting operations.
+ *  This is invoked whenever a localization file is loaded.
+ */
 class LocalizationManager( // @formatter:off
     val bundle: Flow<LocalizationBundle>,
     val resourceProvider: suspend (String) -> Source,
     val coroutineContext: CoroutineContext,
-    val globalContextInit: EvaluationContextBuilder.() -> Unit = {}
+    val globalContextInit: EvaluationContextSpec = {}
 ) { // @formatter:on
+    /** Companion for extension injection. */
     companion object; // For injecting extensions
 
+    /**
+     * Creates a manager with a static [bundle].
+     * For ABI compatibility with 1.3.X and earlier.
+     */
     constructor(
         bundle: LocalizationBundle,
         resourceProvider: suspend (String) -> Source,
@@ -75,46 +94,54 @@ class LocalizationManager( // @formatter:off
     internal val coroutineScope: CoroutineScope = CoroutineScope(coroutineContext)
 
     /**
-     * All locales available in the [bundle]. The default locale is accessible via
-     * [LocalizationBundle.defaultLocale].
+     * All locale codes available in the current [bundle].
+     * Emits a new set when the bundle changes.
      */
-    val locales: SharedFlow<Set<String>> =
-        bundle.mapLatest { bundle -> bundle.locales }.shareIn(coroutineScope, SharingStarted.Eagerly, 1)
+    val locales: StateFlow<Set<String>> = bundle.mapLatest { bundle ->
+        bundle.locales
+    }.stateIn(coroutineScope, SharingStarted.Eagerly, emptySet())
 
     /**
-     * Currently selected UI locale as a [MutableStateFlow]. Updating the value triggers reloading
-     * of [currentLocalizations]. Initialized with [LocalizationBundle.defaultLocale].
+     * Localizations loaded for the bundle's default locale.
+     * This is used as a fallback when a message is missing in the current locale.
+     */
+    val defaultLocalizations: StateFlow<LocalizationFile> = bundle.mapLatest { bundle ->
+        bundle.loadDefaultLocaleSuspend(resourceProvider, globalContextInit)
+    }.stateIn(coroutineScope, SharingStarted.Eagerly, LocalizationFile.empty)
+
+    /**
+     * The currently selected locale. If not set explicitly, it will initialize
+     * to the bundle's default locale the first time it becomes available.
      */
     val locale: MutableStateFlow<String?> = MutableStateFlow<String?>(null).apply {
-        coroutineScope.launch {
-            // Update locale from first bundle default locale
-            value = bundle.first().defaultLocale
-        }
+        coroutineScope.launch { // @formatter:off
+            bundle.mapLatest { bundle -> bundle.defaultLocale }
+                .distinctUntilChanged()
+                .collect { locale ->
+                    if(value != null) return@collect
+                    value = locale
+                }
+        } // @formatter:on
     }
 
     /**
-     * Hot state flow with the default-locale [LocalizationFile]. This is always kept loaded and is
-     * used as a fallback for missing messages in the current locale.
+     * Localizations loaded for the [locale] currently selected.
+     * Falls back to [LocalizationFile.empty] until the data is loaded.
      */
-    val defaultLocalizations: SharedFlow<LocalizationFile> = bundle.mapLatest { bundle ->
-        bundle.loadDefaultLocaleSuspend(resourceProvider, globalContextInit)
-    }.shareIn(coroutineScope, SharingStarted.Eagerly, 1)
+    val currentLocalizations: StateFlow<LocalizationFile> =
+        combine(bundle, locale.filterNotNull(), defaultLocalizations) { bundle, locale, defaultLocalizations ->
+            if (locale == bundle.defaultLocale) return@combine defaultLocalizations
+            bundle.loadLocaleSuspend(locale, resourceProvider, globalContextInit)
+        }.stateIn(coroutineScope, SharingStarted.Eagerly, LocalizationFile.empty)
+
+    /** True while [currentLocalizations] has not finished loading. */
+    val isLoading: StateFlow<Boolean> = currentLocalizations.mapLatest { file ->
+        file === LocalizationFile.empty
+    }.stateIn(coroutineScope, SharingStarted.Eagerly, true)
 
     /**
-     * Hot state flow with the [LocalizationFile] for the current [locale]. When the locale equals
-     * the default, this simply points to [defaultLocalizations].
-     */
-    val currentLocalizations: SharedFlow<LocalizationFile> =
-        combine(locale.filterNotNull(), defaultLocalizations, bundle) { locale, defaultLocalizations, bundle ->
-            if (locale == bundle.defaultLocale) defaultLocalizations
-            else bundle.loadLocaleSuspend(locale, resourceProvider, globalContextInit)
-        }.shareIn(coroutineScope, SharingStarted.Eagerly, 1)
-
-    /**
-     * Formats a message by [name] using the given evaluation [context].
-     *
-     * Returns a [Flow] that emits the formatted string whenever underlying localizations change,
-     * or null if the message is missing both in the current and the default locale.
+     * Formats a message by name with the supplied reactive [context].
+     * Returns null if the message is not found in both current and default localizations.
      */
     fun formatOrNull( // @formatter:off
         name: String,
@@ -127,23 +154,19 @@ class LocalizationManager( // @formatter:off
     }
 
     /**
-     * Formats a message by [name] using a lazily built context via [contextInit].
-     *
-     * The builder is applied on top of a base context created for the current localization file and
-     * extended with [globalContextInit]. Returns null if the message cannot be resolved neither in
-     * the current nor the default locale.
+     * Formats a message by name with a lazily built reactive context.
+     * [contextInit] is invoked each time a localization file is used to build the context.
      */
     inline fun formatOrNull( // @formatter:off
         name: String,
-        crossinline contextInit: ReactiveEvaluationContextBuilder.() -> Unit = {}
+        crossinline contextInit: ReactiveEvaluationContextSpec = {}
     ): Flow<String?> {
         return formatOrNull(name, reactiveEvaluationContext(currentLocalizations, contextInit))
     }
 
     /**
-     * Formats an attribute [attribName] of a message [name] using the given [context].
-     *
-     * Returns null if the attribute cannot be resolved in both current and default locales.
+     * Formats a message attribute by [name] and [attribName] with the supplied reactive [context].
+     * Returns null if the attribute is not found in both current and default localizations.
      */
     fun formatOrNull( // @formatter:off
         name: String,
@@ -157,56 +180,70 @@ class LocalizationManager( // @formatter:off
     }
 
     /**
-     * Formats an attribute [attribName] of a message [name] using a lazily built context via
-     * [contextInit]. Returns null if the attribute cannot be resolved in both locales.
+     * Formats a message attribute with a lazily built reactive context.
+     * [contextInit] is invoked each time a localization file is used to build the context.
      */
     inline fun formatOrNull( // @formatter:off
         name: String,
         attribName: String,
-        crossinline contextInit: ReactiveEvaluationContextBuilder.() -> Unit = {}
+        crossinline contextInit: ReactiveEvaluationContextSpec = {}
     ): Flow<String?> {
         return formatOrNull(name, attribName, reactiveEvaluationContext(currentLocalizations, contextInit))
     }
 
-    /**
-     * Formats a message by [name] using the given [context].
-     *
-     * Unlike [formatOrNull], this never emits null. If the message is missing it emits a readable
-     * placeholder in the form of "<name>".
-     */
+    /** Like [formatOrNull] but substitutes with "<name>" if missing. */
     fun format(name: String, context: ReactiveEvaluationContext): Flow<String> = formatOrNull(name, context)
         .mapLatest { text -> text ?: "<$name>" }
 
-    /**
-     * Formats a message by [name] using a lazily built context via [contextInit].
-     *
-     * Emits a placeholder "<name>" if the message cannot be found.
-     */
-    fun format(name: String, contextInit: ReactiveEvaluationContextBuilder.() -> Unit = {}): Flow<String> =
+    /** Like [formatOrNull] but substitutes with "<name>" if missing. */
+    fun format(name: String, contextInit: ReactiveEvaluationContextSpec = {}): Flow<String> =
         formatOrNull(name, contextInit).mapLatest { text -> text ?: "<$name>" }
 
-    /**
-     * Formats an attribute [attribName] of a message [name] using the given [context].
-     *
-     * Emits a placeholder "<name.attrib>" if the attribute cannot be found.
-     */
+    /** Like [formatOrNull] for attributes but substitutes with "<name.attribName>" if missing. */
     fun format(name: String, attribName: String, context: ReactiveEvaluationContext): Flow<String> = formatOrNull(name, attribName, context)
         .mapLatest { text -> text ?: "<$name.$attribName>" }
 
-    /**
-     * Formats an attribute [attribName] of a message [name] using a lazily built context via
-     * [contextInit]. Emits a placeholder "<name.attrib>" if the attribute cannot be found.
-     */
-    fun format(name: String, attribName: String, contextInit: ReactiveEvaluationContextBuilder.() -> Unit = {}): Flow<String> =
+    /** Like [formatOrNull] for attributes but substitutes with "<name.attribName>" if missing. */
+    fun format(name: String, attribName: String, contextInit: ReactiveEvaluationContextSpec = {}): Flow<String> =
         formatOrNull(name, attribName, contextInit).mapLatest { text -> text ?: "<$name.$attribName>" }
 
     /**
-     * Forces reloading of localization files.
+     * Returns an accessor that formats message values by name.
      *
-     * Reloads the default localization file and then re-emits the current [locale] to refresh the
-     * current locale file if needed.
+     * The produced [Accessor] accepts a message identifier and returns the formatted string,
+     * applying this file's [globalContextInit].
      */
-    fun reload() {
-        locale.update { it }
+    fun formatting(context: ReactiveEvaluationContext): Accessor<Flow<String>> = Accessor { format(it, context) }
+
+    /**
+     * Returns an accessor that formats message values by name.
+     *
+     * The produced [Accessor] accepts a message identifier and returns the formatted string,
+     * applying this file's [globalContextInit].
+     */
+    fun formatting(contextInit: ReactiveEvaluationContextSpec = {}): Accessor<Flow<String>> = Accessor { format(it, contextInit) }
+
+    /**
+     * Returns an accessor for attributes of the given [entryName].
+     *
+     * The resulting [Accessor] accepts an attribute name and returns the formatted value for
+     * the attribute of the specified message, applying this file's [globalContextInit].
+     */
+    fun formatting(entryName: String, context: ReactiveEvaluationContext): Accessor<Flow<String>> = Accessor { attribName ->
+        format(entryName, attribName, context)
     }
+
+    /**
+     * Returns an accessor for attributes of the given [entryName].
+     *
+     * The resulting [Accessor] accepts an attribute name and returns the formatted value for
+     * the attribute of the specified message, applying this file's [globalContextInit].
+     */
+    fun formatting(entryName: String, contextInit: ReactiveEvaluationContextSpec = {}): Accessor<Flow<String>> =
+        Accessor { attribName ->
+            format(entryName, attribName, contextInit)
+        }
+
+    /** Triggers reload by re-applying the current [locale] value. */
+    fun reload() = locale.update { it }
 }

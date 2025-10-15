@@ -75,4 +75,35 @@ data class ReactiveEvaluationContext( // @formatter:off
             }
         }
     }
+
+    /**
+     * Returns a new context that combines this context with [other].
+     *
+     * The resulting context:
+     * - uses this [file],
+     * - merges [functions] with [other]'s functions (values from [other] override on key collision),
+     * - merges [variables] with [other]'s variables (values from [other] override on key collision),
+     */
+    operator fun plus(other: ReactiveEvaluationContext): ReactiveEvaluationContext {
+        return copy( // @formatter:off
+            functions = functions + other.functions,
+            variables = variables + other.variables
+        ) // @formatter:on
+    }
+
+    /**
+     * Creates a new context with [functions] overlaid on top of the current set.
+     * If a function with the same name exists, the provided one takes precedence.
+     */
+    fun overlayFunctions(functions: Map<String, Function>): ReactiveEvaluationContext {
+        return copy(functions = this.functions + functions)
+    }
+
+    /**
+     * Creates a new context with [variables] overlaid on top of the current set.
+     * If a variable with the same name exists, the provided one takes precedence.
+     */
+    fun overlayVariables(variables: Map<String, Flow<Expr>>): ReactiveEvaluationContext {
+        return copy(variables = this.variables + variables)
+    }
 }
